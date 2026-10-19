@@ -1,51 +1,61 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8">
+<html lang="en">
+<head>
+<meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Moduvela MicroAI — Offline Experiment</title>
+<title>Moduvela Blueprint Designer — Offline</title>
 <style>
-body{font:16px/1.5 system-ui, sans-serif;max-width:850px;margin:2rem auto;padding:0 1rem;background:#f2f5fa;color:#223147}
-main{background:white;border-radius:15px;padding:2rem;box-shadow:0 5px 24px #0a152313}
-textarea{width:100%;height:120px;box-sizing:border-box;padding:1rem;font:inherit;border:1px solid #899ba9;border-radius:8px}
-button{background:#1458aa;color:white;border:0;border-radius:8px;padding:.75rem 1.2rem;font:inherit;cursor:pointer}
-pre{white-space:pre-wrap;word-wrap:break-word;background:#eef3f8;padding:1rem;border-radius:9px;max-height:520px;overflow:auto}
-.notice{padding:1rem;background:#fff5dd;border-radius:9px}small{color:#4c6075}p{line-height:1.6}
-</style></head><body><main>
-<h1>Moduvela MicroAI</h1><p><strong>Experimental on-device business interpreter</strong></p>
-<p>Entirely offline, no API calls, no LLM and no GPU required. This demo uses a tiny hybrid of explicit business term rules and per-clause nearest-example matching, then proposes a Moduvela-compatible blueprint. It is <strong>not</strong> a full natural-language model.</p>
-<label for="description">Describe your fictional business</label>
-<textarea id="description">I run a small drone-repair workshop. We log repair jobs, track spare parts, record customer drop-offs, and issue completion certificates. I also want a workflow step where high-value repairs require manager approval.</textarea>
-<p><button id="run">Suggest blueprint locally</button> <button id="download" type="button">Download proposed JSON</button></p>
-<p id="status" role="status"></p>
-<div class="notice">Experimental: review and edit proposals before using them. No model inference or server calls. Do not enter personal or confidential business information.</div>
-<h2>Suggested blueprint</h2><pre id="output">Press Suggest blueprint locally.</pre>
-<h2>Diagnostics</h2><pre id="diagnostics"></pre>
-<small>This static experiment does not automatically create or approve applications in the Moduvela server. Workflow features are labelled separately because they are not implemented yet.</small>
-<script type="module">
-import {analyseDescription, modelInformation} from "./engine.mjs";
-const input=document.getElementById("description");
-const output=document.getElementById("output");
-const diag=document.getElementById("diagnostics");
-const status=document.getElementById("status");
-let candidate=null;
-diag.textContent=JSON.stringify(modelInformation(),null,2);
-function run() {
- try {
-  const result=analyseDescription(input.value);
-  candidate=result.blueprint;
-  output.textContent=result.blueprint ? JSON.stringify(result.blueprint,null,2) : result.clarification;
-  status.textContent=(result.futureFeatures.length ? "Requested future features: "+result.futureFeatures.join(", ")+". " : "")+result.clarification;
-  diag.textContent=JSON.stringify({model:modelInformation(),matches:result.matches,note:result.note},null,2);
- } catch(e) {
-  candidate=null;status.textContent=e.message;output.textContent="No blueprint generated.";
- }
-}
-document.getElementById("run").addEventListener("click",run);
-document.getElementById("download").addEventListener("click",()=>{
- if(!candidate){status.textContent="Generate a draft proposal first.";return;}
- const blob=new Blob([JSON.stringify(candidate,null,2)],{type:"application/json"});
- const href=URL.createObjectURL(blob);const link=document.createElement("a");
- link.href=href;link.download="moduvela-draft-blueprint.json";link.click();
- URL.revokeObjectURL(href);
-});
-run();
-</script></main></body></html>
+:root{color-scheme:light;font-family:system-ui,sans-serif;color:#20304a}
+*{box-sizing:border-box}body{margin:0;background:#f3f6fb}
+main{max-width:1030px;margin:2rem auto;padding:1.8rem;background:white;border-radius:16px;box-shadow:0 8px 32px #172c4512}
+h1{margin-bottom:.3rem}h2{font-size:1.15rem;margin:1.4rem 0 .6rem}
+p{line-height:1.55}.muted{color:#516477}.fine{font-size:.85rem}
+textarea{width:100%;min-height:130px;resize:vertical;padding:1rem;font:inherit;border:1px solid #9aacc0;border-radius:9px}
+button{border:0;background:#1559ad;color:white;border-radius:9px;padding:.7rem 1rem;cursor:pointer;font:inherit;margin:.3rem .5rem .3rem 0}
+button.secondary{background:#e5edf7;color:#17385e}button:disabled{opacity:.5;cursor:not-allowed}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:.8rem}
+section{border-top:1px solid #e3e9f1;padding-top:.5rem}.card{border:1px solid #d8e2ed;border-radius:10px;padding:1rem}
+.card label{display:flex;align-items:center;gap:.5rem;cursor:pointer;font-weight:650}
+small{color:#526475;display:block;margin-top:.4rem;line-height:1.35}
+.note{background:#fff4db;padding:.85rem;border-radius:9px}
+ul{padding-left:1.3rem;line-height:1.5}li{margin-bottom:.45rem}
+pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#edf3fa;padding:1rem;border-radius:10px;max-height:300px;overflow:auto}
+code{font-family:ui-monospace,monospace}#status{min-height:1.5rem}
+@media(max-width:650px){main{margin:0;border-radius:0;padding:1rem}}
+</style>
+</head>
+<body>
+<main>
+<h1>Moduvela Blueprint Designer <small>MicroAI · v0.3 prototype</small></h1>
+<p class="muted">Describe a fictional business. The tiny on-device interpreter suggests a data model and identifies questions. No GPU, model download, paid AI or network inference.</p>
+<label for="description"><strong>What should your business application do?</strong></label>
+<textarea id="description" maxlength="5000">I run a small drone-repair workshop. We log repair jobs, track spare parts, record customer drop-offs, and issue completion certificates. I also want a workflow step where high-value repairs require manager approval.</textarea>
+<p><button id="analyse">Analyse requirements locally</button></p>
+<p class="note">Prototype only. No authentication or business-grade security. Use fictional information, not real customer or commercial data.</p>
+<p role="status" id="status"></p>
+
+<section id="design" hidden>
+ <h2>1. Review business sections</h2>
+ <p class="muted fine">Select which record sections belong in the proposed application. Every selection remains a draft until separately approved inside Moduvela.</p>
+ <div id="entity-options" class="grid"></div>
+ <h2>2. Possible relationships — not yet enforced</h2><ul id="relationships"></ul>
+ <h2>3. Workflows / features not yet implemented</h2><ul id="unsupported"></ul>
+ <h2>4. Questions to resolve</h2><ul id="questions"></ul>
+ <h2>5. Draft application blueprint</h2>
+ <p class="fine muted">This JSON contains only currently supported entity/field definitions. Suggested relationships and workflow rules stay outside the executable blueprint.</p>
+ <pre id="preview"></pre>
+ <button id="download" class="secondary">Download draft JSON</button>
+ <button id="save" disabled>Save draft in Moduvela</button>
+ <p id="savehint" class="muted fine"></p>
+</section>
+
+<section>
+<h2>Diagnostic information</h2>
+<details><summary>Show interpreter diagnostics</summary><pre id="diagnostics"></pre></details>
+<p class="muted fine">This is a small rule-assisted classifier, not general-purpose AI. It may misinterpret requirements, particularly negation and complex exceptions. All suggestions need review.</p>
+</section>
+<input type="hidden" id="csrf" value="__MODUVELA_CSRF__">
+<script type="module" src="./app.mjs"></script>
+</main>
+</body>
+</html>
