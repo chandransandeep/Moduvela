@@ -75,3 +75,11 @@ The current prototype has no authentication and is **for fictional demo data onl
 ## AI cost policy
 
 **Free trials never call paid AI APIs at Moduvela's expense.** The main product is the offline, deterministic application engine. Any future optional inference will be either customer-funded through bring-your-own-key (BYOK), prepaid hosted AI credits, or a compatible customer-owned local model. AI is not needed for ordinary business operations. See [ADR-0002: zero-subsidy AI](docs/ADR-0002-AI-COST-POLICY.md).
+
+## Experimental tiny browser-based MicroAI
+
+For customers who want to **describe** a business instead of filling in a guided wizard, see [the MicroAI experiment](experiments/microai/README.md) and its [browser demonstration](experiments/microai/index.html).
+
+MicroAI v0 is a domain-specific **weighted nearest-example text classifier**, not a language model. It recognises some business concepts and proposes Moduvela version-1 fields; it does not create arbitrary applications or run workflows. It requires no AI provider, model download, GPU, or inference service. The classifier is completely optional, with all production-facing capabilities remaining in the deterministic non-AI engine.
+
+Run the standalone static demonstration locally with `python -m http.server 8000 --bind 127.0.0.1` and open `http://127.0.0.1:8000/experiments/microai/`. Its suggestions are experimental and are not automatically applied to the main runtime.
