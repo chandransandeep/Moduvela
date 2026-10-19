@@ -36,3 +36,7 @@ This table is a **roadmap**, not a statement of implemented features. The curren
 
 ## Scope discipline
 Generic industry support comes from reusable primitives, not a huge list of superficial templates. Test against one complete fictional workshop/service-business workflow before claiming broad coverage. AI is not required for the workflow to run.
+
+## Zero-subsidy optional AI policy
+
+Free users do not receive operator-funded LLM calls. A demo stays no-AI. Optional future AI requires customer-funded BYOK, prepaid credits or local inference and server-side rate, token and budget enforcement. See [ADR-0002](ADR-0002-AI-COST-POLICY.md). This policy does not eliminate ordinary hosting and support costs.

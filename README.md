@@ -71,3 +71,7 @@ Built with entirely original, fictional scenarios and data; no employer or custo
 The **application runtime is the product**, and it must perform everyday work without any model, token, cloud subscription or network connection. AI may later help translate descriptions into suggested, owner-approved blueprints, but business records, policies, workflows and reports are computed by a deterministic engine. See [architecture decision ADR-0001](docs/ADR-0001-LOCAL-FIRST-CORE.md) and [the local-first roadmap](docs/ROADMAP.md).
 
 The current prototype has no authentication and is **for fictional demo data only**. Many advertised roadmap capabilities are not yet implemented.
+
+## AI cost policy
+
+**Free trials never call paid AI APIs at Moduvela's expense.** The main product is the offline, deterministic application engine. Any future optional inference will be either customer-funded through bring-your-own-key (BYOK), prepaid hosted AI credits, or a compatible customer-owned local model. AI is not needed for ordinary business operations. See [ADR-0002: zero-subsidy AI](docs/ADR-0002-AI-COST-POLICY.md).
