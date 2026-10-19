@@ -15,5 +15,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Verify trained model is reproducible and check held-out evaluation
+        run: |
+          node experiments/microai/training/train.mjs --check
+          node experiments/microai/benchmark.mjs
       - name: Test browser MicroAI without packages or model APIs
         run: node --test experiments/microai/*.test.mjs

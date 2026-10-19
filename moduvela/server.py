@@ -91,7 +91,7 @@ class Handler(BaseHTTPRequestHandler):
 
     def serve_microai_asset(self, name):
         """Serve only explicitly allowlisted static demo assets, locally."""
-        allowed = {'index.html', 'app.mjs', 'planner.mjs', 'engine.mjs', 'review.mjs', 'fields.mjs'}
+        allowed = {'index.html', 'app.mjs', 'planner.mjs', 'engine.mjs', 'review.mjs', 'fields.mjs', 'trained.mjs', 'training/model.generated.mjs'}
         if name not in allowed:
             return self.send('Not found', 404)
         root = Path(__file__).resolve().parents[1] / 'experiments' / 'microai'

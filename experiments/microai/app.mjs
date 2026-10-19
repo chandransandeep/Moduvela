@@ -1,5 +1,6 @@
 import { proposeBusinessPlan, reviewedBlueprint } from "./planner.mjs";
 import { modelInformation } from "./engine.mjs";
+import {predictCompact,compactInfo} from "./trained.mjs";
 import {beginReview,editSection,addSection,removeSection,compileReviewedBlueprint} from "./review.mjs";
 const byId=id=>document.getElementById(id);
 const input=byId("description");
@@ -105,8 +106,15 @@ function describe() {
     byId("savehint").textContent=availableImport()
       ? "Import saves this as an UNAPPROVED draft. You will review and activate it separately."
       : "To import directly, open this designer inside the running Moduvela application at http://127.0.0.1:8765/microai/. Standalone preview supports JSON download.";
+    const trained=predictCompact(input.value);
+    const suggested=trained.filter(x=>x.suggested).map(x=>x.name);
+    const deterministic=plan.entities.map(x=>x.name);
+    const comparison=byId("trained-model");
+    comparison.textContent="Compact trained model suggests: "+(suggested.join(", ")||"none")+". " +
+      "Rule engine suggests: "+(deterministic.join(", ")||"none")+". "+
+      "This is a separate, unverified second opinion. It does not add or activate anything.";
     byId("diagnostics").textContent=JSON.stringify({
-      engine:modelInformation(),matched:plan.classifier.matches,
+      engine:modelInformation(),compactModel:compactInfo(),trainedScores:trained,matched:plan.classifier.matches,
       exclusions:plan.excluded,notes:plan.notes
     },null,2);
     refreshPreview();
