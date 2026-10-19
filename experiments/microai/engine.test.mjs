@@ -44,3 +44,30 @@ test("validates input boundaries and avoids execution of injected markup", () =>
  assert.ok(result.blueprint.description.includes("<script>"));
  // Rendering uses textContent/JSON.stringify only; no markup interpretation.
 });
+
+test("drone repair workshop compound description creates four data sections", () => {
+ const text="I run a small drone-repair workshop. We log repair jobs, track spare parts, record customer drop-offs, and issue completion certificates. I also want a workflow step where high-value repairs require manager approval.";
+ const result=analyseDescription(text);
+ assert.ok(result.blueprint);
+ const sections=result.blueprint.entities.map(x=>x.name);
+ for(const section of ["Customers","Jobs","Inventory","Certificates"])
+   assert.ok(sections.includes(section), "missing "+section+"; found "+sections);
+ assert.ok(result.blueprint.entities.find(x=>x.name==="Jobs").fields.includes("drop_off_date"));
+ assert.ok(result.futureFeatures.some(s=>s.includes("manager approval")));
+ assert.ok(result.blueprint.limitations.some(s=>s.includes("not implemented")));
+});
+test("handles multiple requirements rather than selecting one industry", () => {
+ const text="We record customers, employ technicians, track repair jobs, stock spare parts, schedule appointments, invoice clients, and issue completion certificates. A manager must approve costly jobs.";
+ const result=analyseDescription(text);
+ assert.ok(result.blueprint);
+ const sections=result.blueprint.entities.map(x=>x.name);
+ for(const section of ["Customers","Staff","Jobs","Inventory","Appointments","Invoices","Certificates"])
+   assert.ok(sections.includes(section), "missing "+section+"; found "+sections);
+ assert.ok(result.futureFeatures.some(s=>s.includes("Approvals")));
+});
+test("approval is described as unsupported rather than an executable section", () => {
+ const result=analyseDescription("We track repair jobs and require manager approval for expensive repairs");
+ assert.ok(result.blueprint.entities.some(x=>x.name==="Jobs"));
+ assert.ok(result.futureFeatures.some(x=>x.includes("manager approval")));
+ assert.ok(!result.blueprint.entities.some(x=>x.name==="Approvals"));
+});

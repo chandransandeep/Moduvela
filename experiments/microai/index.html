@@ -11,9 +11,9 @@ pre{white-space:pre-wrap;word-wrap:break-word;background:#eef3f8;padding:1rem;bo
 .notice{padding:1rem;background:#fff5dd;border-radius:9px}small{color:#4c6075}p{line-height:1.6}
 </style></head><body><main>
 <h1>Moduvela MicroAI</h1><p><strong>Experimental on-device business interpreter</strong></p>
-<p>Entirely offline, no API calls, no LLM and no GPU required. This demo uses a very small supervised nearest-example text classifier with fixed, synthetic training examples, then proposes a Moduvela-compatible blueprint. It is <strong>not</strong> a full natural-language model.</p>
+<p>Entirely offline, no API calls, no LLM and no GPU required. This demo uses a tiny hybrid of explicit business term rules and per-clause nearest-example matching, then proposes a Moduvela-compatible blueprint. It is <strong>not</strong> a full natural-language model.</p>
 <label for="description">Describe your fictional business</label>
-<textarea id="description">I run a repair shop. We record customers and jobs, track spare parts, and send invoices. I want approval before ordering expensive items.</textarea>
+<textarea id="description">I run a small drone-repair workshop. We log repair jobs, track spare parts, record customer drop-offs, and issue completion certificates. I also want a workflow step where high-value repairs require manager approval.</textarea>
 <p><button id="run">Suggest blueprint locally</button> <button id="download" type="button">Download proposed JSON</button></p>
 <p id="status" role="status"></p>
 <div class="notice">Experimental: review and edit proposals before using them. No model inference or server calls. Do not enter personal or confidential business information.</div>

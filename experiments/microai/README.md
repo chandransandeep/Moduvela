@@ -16,8 +16,8 @@ Visit **http://127.0.0.1:8000/experiments/microai/**, or run `node --test experi
 
 1. Normalise and tokenise the description.
 2. Use a small, fixed supervised set of *synthetic* labelled business phrases.
-3. Perform weighted bag-of-words nearest-example classification, not generative inference.
-4. Select entity categories (customers, jobs, stock, bookings, invoices, staff and inspections).
+3. Split long descriptions into smaller clauses and use weighted nearest-example matching for each part.
+4. Supplement example similarity with explicit business-term rules. Recognise customers, jobs, inventory, appointments, invoices, staff, inspections and certificates.
 5. Suggest version-1 Moduvela blueprint entities, with all fields represented as text.
 6. Put reminders and approvals in an unsupported-feature list, since the runtime does not yet implement them.
 7. Request human review. If the input is out of distribution, ask for clarification.
@@ -27,7 +27,8 @@ The classifier is trainable by changing its labelled examples; currently they ar
 ## Important limitations
 
 - This is a weak lexical prototype, not a general-purpose English understanding system.
-- Similar words can cause false positives, and compound descriptions can miss requirements.
+- Similar words can cause false positives; segmentation improves compound descriptions but cannot reliably understand all complex wording, negation, relationships or workflows.
+- Certificates are suggested as **data records**, not automatically generated legal documents. Manager approvals remain unsupported proposed features.
 - Similarity scores are **not calibrated confidence probabilities**.
 - No arbitrary relation, workflow, field-type or permission generation.
 - Do not silently approve or deploy suggested blueprints.
@@ -45,3 +46,7 @@ After collecting an opt-in, synthetic or consented labelled dataset, benchmark:
 Evaluate held-out businesses, adversarial descriptions, ambiguity, languages, memory and inference latency on low-powered devices. Do not claim minimal download size or accuracy until the production bundle is measured.
 
 **Product rule:** the app always works if MicroAI is disabled, removed or completely wrong.
+
+## Drone repair regression fixture
+
+The test suite now includes the exact fictional drone repair workshop scenario with parts, customer drop-offs, completion certificates and manager approvals. Expected: records for Customers, Jobs, Inventory and Certificates; approval remains an unsupported requested feature.

@@ -84,6 +84,17 @@ const LABELS = {
       "document quality assurance inspections",
     ],
   },
+  certificates: {
+    entity: "Certificates", fields: ["job", "certificate_number", "issued_date", "status"],
+    examples: [
+      "issue certificates when repair jobs are completed",
+      "record completion certificates issued to customers",
+      "generate service completion certificates",
+      "track certificate numbers and issue dates",
+      "record certificates of completion for finished work",
+      "keep service certificates linked to jobs",
+    ],
+  },
   reminders: {
     feature: "Reminders (not implemented in core yet)",
     examples: [
@@ -122,6 +133,9 @@ const ALIASES = {
   notifications: "reminder", alerts: "reminder", notify: "reminder",
   reminders: "reminder", reminder: "reminder",
   approvals: "approval", approve: "approval", approved: "approval",
+  repairs: "repair", repairing: "repair", repaired: "repair",
+  certificates: "certificate", certification: "certificate",
+  dropoffs: "dropoff", dropoff: "dropoff",
 };
 
 const STOP = new Set("a an and as at be by can do for from i in is it my of on or our the their them to we with would want need should that this they have me please manage business run small record track".split(" "));
@@ -161,59 +175,106 @@ function similarity(a, b) {
   for (const [word, value] of a.vector) product += value * (b.vector.get(word) || 0);
   return product / (a.norm * b.norm);
 }
+
 function titleCase(word) { return word.charAt(0).toUpperCase() + word.slice(1); }
 
+// Lexical rules are intentionally narrow. The user still reviews the proposal.
+const SIGNALS = {
+  customers: /\b(?:customers?|clients?|members?)\b/i,
+  jobs: /\b(?:repairs?|repairing|jobs?|tasks?|work[ -]?orders?|service requests?)\b/i,
+  inventory: /\b(?:spare parts?|parts?|stock|inventory|materials?|supplies?|warehouse)\b/i,
+  appointments: /\b(?:appointments?|bookings?|reservations?|consultations?|scheduled visits?)\b/i,
+  invoices: /\b(?:invoices?|billing|bills?|payments?|charges?)\b/i,
+  staff: /\b(?:staff|employees?|technicians?|mechanics?|workers?|team members?)\b/i,
+  inspections: /\b(?:inspections?|audits?|assessments?|compliance checks?|quality checks?)\b/i,
+  certificates: /\b(?:certificates?|certification|certificate numbers?)\b/i,
+  reminders: /\b(?:reminders?|remind|notifications?|notify|alerts?|overdue|expiring)\b/i,
+  approvals: /\b(?:approvals?|approve|approved|authoris\w*|authoriz\w*|sign[ -]?off)\b/i,
+};
+
+function descriptionSegments(text) {
+  // Splitting prevents a long multi-intent paragraph from diluting each topic.
+  return text.split(/[,.!?;\n]+|\b(?:and|also|plus)\b/gi)
+    .map(chunk => chunk.trim()).filter(Boolean).slice(0, 100);
+}
+function sharedTerms(a, b) {
+  let n = 0;
+  for (const term of a.vector.keys()) if (b.vector.has(term)) n++;
+  return n;
+}
+function classify(text, threshold) {
+  const scores = Object.fromEntries(Object.keys(LABELS).map(label => [label, 0]));
+  for (const part of [...descriptionSegments(text), text]) {
+    const sample = weighted(counts(tokenize(part)));
+    if (!sample.norm) continue;
+    for (const training of INDEX) {
+      const score = similarity(sample, training);
+      if (sharedTerms(sample, training) >= 2 && score > scores[training.label])
+        scores[training.label] = score;
+    }
+  }
+  return Object.keys(LABELS).flatMap(label => {
+    const explicit = SIGNALS[label].test(text);
+    const similar = scores[label] >= Math.max(threshold, 0.42);
+    if (!explicit && !similar) return [];
+    return [{label, score: Number(scores[label].toFixed(3)),
+      source: [explicit ? "direct term" : "", similar ? "example match" : ""].filter(Boolean).join(" + ")}];
+  }).sort((a,b) => Number(b.source.includes("direct term")) -
+                       Number(a.source.includes("direct term")) || b.score - a.score);
+}
+
 /**
- * Returns a proposal only; never modifies records.
- * Scores reflect relative lexical similarity, not calibrated probabilities.
+ * Compiles a suggested Blueprint v1 only. Never executes a business workflow.
+ * Scores represent lexical similarity, not calibrated probability.
  */
 export function analyseDescription(text, threshold = 0.24) {
   if (typeof text !== "string" || text.length < 12 || text.length > 5000)
     throw new Error("Describe the business in 12 to 5000 characters");
-  const words = counts(tokenize(text));
-  const vector = weighted(words);
-  const scores = Object.fromEntries(Object.keys(LABELS).map(label => [label, 0]));
-  for (const training of INDEX) {
-    scores[training.label] = Math.max(scores[training.label], similarity(vector, training));
-  }
-  const selected = Object.entries(scores)
-    .filter(([, score]) => score >= threshold)
-    .sort((a, b) => b[1] - a[1]);
-  const entities = selected.filter(([label]) => LABELS[label].entity)
+  if (typeof threshold !== "number" || !Number.isFinite(threshold) ||
+      threshold < 0 || threshold > 1) throw new Error("Invalid threshold");
+  const selected = classify(text, threshold);
+  const entities = selected.filter(({label}) => LABELS[label].entity)
     .slice(0, 12)
-    .map(([label]) => ({ name: LABELS[label].entity, fields: [...LABELS[label].fields] }));
-  const wishes = selected.filter(([label]) => LABELS[label].feature)
-    .map(([label]) => LABELS[label].feature);
-  const unclear = !selected.length || !entities.length;
+    .map(({label}) => ({name: LABELS[label].entity, fields: [...LABELS[label].fields]}));
+  const jobs = entities.find(entity => entity.name === "Jobs");
+  if (jobs && /\bdrop[ -]?offs?\b/i.test(text)) jobs.fields.push("drop_off_date");
+  if (jobs && /\b(?:high[ -]?value|expensive|costly)\b/i.test(text))
+    jobs.fields.push("repair_value");
+  const wishes = selected.filter(({label}) => LABELS[label].feature)
+    .map(({label}) => LABELS[label].feature);
+  const highValueApproval = /\b(?:high[ -]?value|expensive|costly)\b/i.test(text) &&
+    /\b(?:approvals?|approve|authoris\w*|authoriz\w*)\b/i.test(text);
+  if (highValueApproval)
+    wishes.push("Conditional manager approval for high-value repairs (not implemented)");
+  const limitations = [
+    "Experimental lexical classifier; confirm every suggestion",
+    "Fields are text only in the current Moduvela engine",
+    "Workflow approval, reminders and actual certificate issuance are not implemented",
+  ];
+  if (wishes.length) limitations.push("Requested but unsupported: " + wishes.join("; "));
+  const unclear = !entities.length;
   return {
     input: text,
-    matches: selected.map(([label, score]) => ({
-      label: titleCase(label), similarity: Number(score.toFixed(3)),
+    matches: selected.map(item => ({
+      label: titleCase(item.label), similarity: item.score, source: item.source,
     })),
     blueprint: unclear ? null : {
       version: 1,
-      name: "Custom Business Operations",
-      category: "custom",
-      description: text,
-      entities,
-      status: "proposal",
-      limitations: [
-        "Experimental lexical classifier; confirm every suggestion",
-        "Fields are text only in the current engine",
-        "Approval, reminder and workflow execution are not implemented",
-      ],
+      name: /\bdrone\b/i.test(text) && /\brepair\w*\b/i.test(text)
+        ? "Drone Repair Workshop" : "Custom Business Operations",
+      category: "custom", description: text, entities, status: "proposal", limitations,
     },
-    futureFeatures: wishes,
+    futureFeatures: [...new Set(wishes)],
     clarification: unclear
-      ? "I could not confidently identify a data section. What should you record: customers, jobs, stock, bookings, invoices, staff or inspections?"
-      : "Please review the proposed sections and fields before approving. You can add or remove them manually.",
-    note: "Similarity scores are not probabilities. A mismatch or omitted requirement is possible.",
+      ? "I could not confidently identify a data section. What should you record: customers, jobs, stock, bookings, invoices, certificates, staff or inspections?"
+      : "Please review all proposed sections, fields and unsupported workflow requests before approval.",
+    note: "A rule-assisted nearest-example classifier, not an LLM. Similarity scores are not probabilities. Some requirements may be omitted or incorrect.",
   };
 }
 
 export function modelInformation() {
   return {
-    method: "weighted bag-of-words nearest-example classifier",
+    method: "per-clause nearest-example matching plus explicit lexical rules",
     examples: TRAINING.length,
     categories: Object.keys(LABELS).length,
     vocabSize: DF.size,
