@@ -1,30 +1,37 @@
-# Proposed roadmap (not a delivery promise)
+# Moduvela roadmap — local capabilities first
 
-## v0.2 — Safe customisation
-- Edit entities and fields in a proposal before approval.
-- Compare blueprint versions and preview data migrations.
-- Export/import blueprints in a documented JSON schema.
-- Add accessibility checks and stronger request validation.
+**Product rule:** A customer should be able to build, customise, operate, report on, export and back up their business application with no AI installed and no internet.
 
-## v0.3 — Users and security
-- Authenticated accounts, isolated business workspaces.
-- Server-enforced roles and permissions, audit history.
-- Backups, encryption/key-management design and security review.
+This table is a **roadmap**, not a statement of implemented features. The current local prototype is not suitable for real business records.
 
-## v0.4 — Optional AI assistance
-- Provider-pluggable LLM adapter with user-controlled credentials.
-- Strict schema-validation and rule-based safety gate.
-- Human acceptance and tests before applying any change.
-- Local/offline mode remains usable without AI.
+| Priority | Capability | Customer outcome | Verification gate |
+| --- | --- | --- | --- |
+| P0 | Blueprint designer | Define business entities and fields visually | Custom application without AI |
+| P0 | Typed data model | Text, number, date, money, enum, relationships, validation | Schema and invalid-input tests |
+| P0 | CRUD + data explorer | Edit records, search, filter, sort and bulk manage | Full lifecycle integration tests |
+| P0 | Data portability | CSV/JSON import/export, local backups and restore | Round-trip and restore drills |
+| P0 | Workflow engine | Define states, business rules, assignments and approvals | Deterministic transition tests |
+| P0 for real usage | Security baseline | Users, session auth, business isolation, RBAC and audit | Threat model and negative auth tests |
+| P1 | Application UI | Responsive tables, forms, menus, dashboards and charts | Accessible task scenarios |
+| P1 | Scheduling | Reminders, overdue jobs, periodic checks | Local scheduler tests |
+| P1 | Distribution | Local installer, self-hosting, upgrades and migrations | Documented install/upgrade/rollback |
+| P2 | Integration SDK | Email, calendar, payment, accounting integrations by explicit opt-in | Permission and failure handling tests |
+| P2 | Offline collaboration | Synchronise multiple devices and reconcile conflicts | Sync/conflict/recovery tests |
+| P3 | Optional AI assistant | Turn a conversation into a draft blueprint, explain settings | Full functionality when AI is absent |
 
-## v0.5 — Useful daily workflows
-- Approvals, timed reminders, CSV import with preview and rollback.
-- Event hooks with secure outbound integration boundaries.
-- Business templates developed with consenting pilot users.
+## Current completed foundation
+- Python standard-library loopback web server and SQLite data store.
+- Deterministic initial templates for garage, audit, salon and general services.
+- Owner review and approval before storing records.
+- Generic forms from blueprint schema.
+- **First non-AI customisation slice:** add a custom section and extend fields before approval.
 
-## v1.0 aspiration — Operable self-hosted edition
-- Install/deploy packaging, update/migration tooling.
-- Data export, recovery exercises, observability, documentation.
-- Measured security and performance assurance.
+## Next implementation slices
+**0.2a:** improve custom designer with edit/rename/delete on drafts and documented JSON export.
+**0.2b:** typed fields and strict validation, then full CRUD and record search.
+**0.2c:** CSV preview/import and backup/restore.
+**0.3:** deterministic state machine and approvals (separate from AI).
+**0.4:** properly authenticated and isolated multi-user foundation.
 
-Roadmap items may change after user feedback.
+## Scope discipline
+Generic industry support comes from reusable primitives, not a huge list of superficial templates. Test against one complete fictional workshop/service-business workflow before claiming broad coverage. AI is not required for the workflow to run.
