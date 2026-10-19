@@ -16,4 +16,4 @@ jobs:
         with:
           node-version: '22'
       - name: Test browser MicroAI without packages or model APIs
-        run: node --test experiments/microai/engine.test.mjs
+        run: node --test experiments/microai/*.test.mjs
