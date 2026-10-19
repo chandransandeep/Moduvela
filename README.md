@@ -99,3 +99,7 @@ The local Blueprint Designer now supports **editing an application name, renamin
 MicroAI now includes a **supervised trained** CPU-only, 8 KB-weights multi-label classifier in the browser. It is an *advisory* side-by-side comparison, because it currently performs worse than deterministic business-term rules on synthetic held-out data. Its training corpus and all scripts are committed and reproducible: see [dataset policy](docs/MICROAI-DATASET.md) and [blueprint contracts](docs/BLUEPRINT-CONTRACTS.md). Artificial examples are **not independent real-world validation**.
 
 A separate local deterministic runtime now supports explicitly activated **state-machine workflows** and **record-to-record links**. For a fictional approved app with Jobs and Customers, configure status stages and a Jobs.customer link from the corresponding links on its application page. Unsupported manager approvals are still unimplemented, and no login or production security exists. Use fictional data only.
+
+## MicroAI v0.5 research checkpoint
+
+The new **genuinely trained compact model**, fully synthetic labelled corpus, annotated design-case fixtures, local state-machine workflow engine and manually activated record-link engine are integrated. The trained model is currently **less accurate than our deterministic interpreter on the synthetic evaluation** and is shown only as an advisory second opinion. See [the full reproducible v0.5 report](docs/MICROAI-V05-REPORT.md). The prototype is not appropriate for real business data, role-based approvals, or hosted multi-user access.
