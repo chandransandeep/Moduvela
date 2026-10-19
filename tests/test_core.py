@@ -1,5 +1,5 @@
 import unittest
-from moduvela.core import compile_blueprint,validate_blueprint,init_db,store_proposal,approve,add_record,load_blueprint
+from moduvela.core import compile_blueprint,validate_blueprint,init_db,store_proposal,approve,add_record,load_blueprint,add_custom_entity,add_custom_fields
 
 class CoreTests(unittest.TestCase):
  def setUp(self): self.db=init_db(':memory:')
@@ -22,5 +22,25 @@ class CoreTests(unittest.TestCase):
   ident=store_proposal(self.db,compile_blueprint('We have a barber salon offering haircuts'))
   approve(self.db,ident)
   with self.assertRaises(ValueError):add_record(self.db,ident,'Customers',{'bad':'value'})
+
+ def test_custom_business_objects_no_ai(self):
+  ident=store_proposal(self.db,compile_blueprint('We organise local club memberships and equipment rentals'))
+  add_custom_entity(self.db,ident,'Equipment',['item_name','serial_number','return_date'])
+  add_custom_fields(self.db,ident,'Customers',['member_since'])
+  row,bp=load_blueprint(self.db,ident)
+  self.assertFalse(row['approved_at'])
+  self.assertIn('member_since',bp['entities'][0]['fields'])
+  self.assertEqual(bp['entities'][-1]['name'],'Equipment')
+  approve(self.db,ident)
+  add_record(self.db,ident,'Equipment',{'item_name':'Demo bike','serial_number':'DEMO-01'})
+  self.assertEqual(self.db.execute('select count(*) from records').fetchone()[0],1)
+  with self.assertRaises(ValueError):add_custom_entity(self.db,ident,'More',['field'])
+  with self.assertRaises(ValueError):add_custom_fields(self.db,ident,'Equipment',['notes'])
+ def test_invalid_customisation_is_rejected(self):
+  ident=store_proposal(self.db,compile_blueprint('We handle appointments and customer services'))
+  for name,fields in [('Customers',['other']),('Bad Name',['other']),('Reviews',['id'])]:
+   with self.assertRaises(ValueError):add_custom_entity(self.db,ident,name,fields)
+  with self.assertRaises(ValueError):add_custom_fields(self.db,ident,'Customers',['name'])
+  self.assertEqual(len(load_blueprint(self.db,ident)[1]['entities']),3)
 
 if __name__=='__main__':unittest.main()

@@ -4,7 +4,7 @@ from urllib.parse import parse_qs, urlparse
 import html
 import os
 import secrets
-from .core import init_db, compile_blueprint, store_proposal, load_blueprint, approve, add_record
+from .core import init_db, compile_blueprint, store_proposal, load_blueprint, approve, add_record, add_custom_entity, add_custom_fields
 
 DB=os.environ.get('MODUVELA_DB','moduvela.db')
 TOKEN=secrets.token_urlsafe(32)
@@ -15,7 +15,7 @@ def esc(v):return html.escape(str(v),quote=True)
 def page(content):
     return '''<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Moduvela Prototype</title>
     <style>body{font:16px system-ui;background:#f4f6f9;color:#1d2734;max-width:900px;margin:3rem auto;padding:0 1rem}main{background:white;padding:2rem;border-radius:18px;box-shadow:0 6px 30px #0b233014}textarea,input{box-sizing:border-box;width:100%;padding:.8rem;margin:.35rem 0 1rem;border:1px solid #b6c4d0;border-radius:9px}button,.button{background:#175caa;color:white;border:0;border-radius:9px;padding:.75rem 1.1rem;cursor:pointer;text-decoration:none}section{border-top:1px solid #dde4ed;padding-top:1rem;margin-top:1.5rem}small{color:#596777}.alert{background:#fff5db;padding:1rem;border-radius:9px}</style>
-    <main><h1>Moduvela <small>v0.1</small></h1><p>Describe → review → approve → use your custom forms</p>''' + content + '''<footer><section><small>Local prototype only. No authentication, remote AI, payments or integrations. Use fictional data.</small></section></footer></main></html>'''
+    <main><h1>Moduvela <small>v0.2-dev</small></h1><p>Describe → review → approve → use your custom forms</p>''' + content + '''<footer><section><small>Local prototype only. No authentication, remote AI, payments or integrations. Use fictional data.</small></section></footer></main></html>'''
 
 class Handler(BaseHTTPRequestHandler):
     def send(self,body,code=200):
@@ -54,8 +54,12 @@ class Handler(BaseHTTPRequestHandler):
                         if records:
                             import json
                             content+='<h4>Latest records</h4><ul>'+''.join('<li>'+esc(', '.join(f'{k}: {v}' for k,v in json.loads(r['payload']).items()))+'</li>' for r in records)+'</ul>'
+                    if not row['approved_at']:
+                        content+='<form method="post" action="/fields"><input type="hidden" name="csrf" value="'+TOKEN+'"><input type="hidden" name="id" value="'+str(ident)+'"><input type="hidden" name="entity" value="'+esc(entity['name'])+'"><label>Add fields (comma separated)<input name="fields" maxlength="800" placeholder="priority, notes" required></label><button>Add fields</button></form>'
                     content+='</section>'
-                if not row['approved_at']:content+='<form method="post" action="/approve"><input type="hidden" name="csrf" value="'+TOKEN+'"><input type="hidden" name="id" value="'+str(ident)+'"><button>Approve and activate</button></form>'
+                if not row['approved_at']:
+                    content+='<section><h3>Add a custom section</h3><p>Create your own section without an AI provider. Section names use letters, numbers or underscores. Field names are lowercase.</p><form method="post" action="/entity"><input type="hidden" name="csrf" value="'+TOKEN+'"><input type="hidden" name="id" value="'+str(ident)+'"><label>Section name<input name="name" maxlength="40" placeholder="Inspections" required></label><label>Fields, comma separated<input name="fields" maxlength="800" placeholder="vehicle, inspector, due_date, notes" required></label><button>Add custom section</button></form></section>'
+                    content+='<form method="post" action="/approve"><input type="hidden" name="csrf" value="'+TOKEN+'"><input type="hidden" name="id" value="'+str(ident)+'"><button>Approve and activate</button></form>'
                 else:content+='<p><strong>Approved and active.</strong></p>'
                 self.send(content+'<p><a href="/">Create another proposal</a></p>')
             except (ValueError,TypeError) as e:self.send('<p>'+esc(e)+'</p>',400)
@@ -71,6 +75,12 @@ class Handler(BaseHTTPRequestHandler):
             if not secrets.compare_digest(fields.get('csrf',''),TOKEN):raise ValueError('Invalid request token')
             if self.path=='/propose':
                 ident=store_proposal(conn,compile_blueprint(fields.get('description','')))
+            elif self.path=='/entity':
+                ident=int(fields['id'])
+                add_custom_entity(conn, ident, fields.get('name',''), fields.get('fields','').split(','))
+            elif self.path=='/fields':
+                ident=int(fields['id'])
+                add_custom_fields(conn, ident, fields.get('entity',''), fields.get('fields','').split(','))
             elif self.path=='/approve':
                 ident=int(fields['id']);approve(conn,ident)
             elif self.path=='/record':

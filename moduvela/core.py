@@ -75,3 +75,41 @@ def add_record(conn, ident, entity, values):
         cur=conn.execute('INSERT INTO records(blueprint_id,entity,payload,created_at) VALUES (?,?,?,?)',
           (ident,entity,json.dumps(clean),datetime.now(timezone.utc).isoformat()))
     return cur.lastrowid
+
+def add_custom_entity(conn, ident: int, name: str, fields: list[str]) -> None:
+    """Add a validated section to a proposal; never modify approved applications."""
+    row, blueprint = load_blueprint(conn, ident)
+    if row['approved_at']:
+        raise ValueError('Approved applications cannot be modified in this prototype')
+    if not isinstance(fields, list):
+        raise ValueError('Invalid fields')
+    draft = dict(blueprint)
+    draft['entities'] = [dict(e) for e in blueprint['entities']]
+    draft['entities'].append({
+        'name': name.strip(),
+        'fields': [f.strip().lower() for f in fields],
+    })
+    validate_blueprint(draft)
+    with conn:
+        conn.execute('UPDATE blueprints SET payload=? WHERE id=? AND approved_at IS NULL',
+                     (json.dumps(draft), ident))
+
+
+def add_custom_fields(conn, ident: int, entity_name: str, fields: list[str]) -> None:
+    """Extend a proposal's entity with new user-defined fields."""
+    row, blueprint = load_blueprint(conn, ident)
+    if row['approved_at']:
+        raise ValueError('Approved applications cannot be modified in this prototype')
+    if not isinstance(fields, list) or not fields:
+        raise ValueError('Invalid fields')
+    draft = dict(blueprint)
+    draft['entities'] = [{'name': e['name'], 'fields': list(e['fields'])}
+                         for e in blueprint['entities']]
+    target = next((e for e in draft['entities'] if e['name'] == entity_name), None)
+    if target is None:
+        raise ValueError('Unknown entity')
+    target['fields'].extend(f.strip().lower() for f in fields)
+    validate_blueprint(draft)
+    with conn:
+        conn.execute('UPDATE blueprints SET payload=? WHERE id=? AND approved_at IS NULL',
+                     (json.dumps(draft), ident))
