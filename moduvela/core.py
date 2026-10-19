@@ -113,3 +113,24 @@ def add_custom_fields(conn, ident: int, entity_name: str, fields: list[str]) -> 
     with conn:
         conn.execute('UPDATE blueprints SET payload=? WHERE id=? AND approved_at IS NULL',
                      (json.dumps(draft), ident))
+
+def create_manual_blueprint(name: str, description: str, entity: str, fields: list[str]) -> dict:
+    """Offline visual-wizard entry point: build an app without templates or AI."""
+    name = name.strip()
+    description = description.strip()
+    if not 1 <= len(name) <= 70:
+        raise ValueError('Application name must be between 1 and 70 characters')
+    if not 12 <= len(description) <= 5000:
+        raise ValueError('Business description must be 12 to 5000 characters')
+    if not isinstance(fields, list):
+        raise ValueError('Invalid fields')
+    blueprint = {
+        'version': 1, 'name': name, 'category': 'custom',
+        'description': description, 'status': 'proposal',
+        'entities': [{'name': entity.strip(),
+                      'fields': [f.strip().lower() for f in fields]}],
+        'limitations': ['Manual offline configuration, no AI',
+                        'No user authentication or production security'],
+    }
+    validate_blueprint(blueprint)
+    return blueprint

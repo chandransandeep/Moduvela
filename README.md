@@ -2,7 +2,7 @@
 
 **Status: independent proof of concept, v0.2 development.** Moduvela proposes a usable business application blueprint from a business owner's plain-English description. After explicit approval, it displays working forms and stores records in SQLite.
 
-The initial release uses a transparent **rule-based compiler**, not a hosted AI model. This is intentional: it is genuinely runnable offline, asks for no credentials, makes no outbound requests and avoids claiming unrestricted generative AI functionality. It supports initial business templates for garages, auditors, salons and a generic service business.
+The initial release uses a transparent **rule-based compiler**, not a hosted AI model. This is intentional: it is genuinely runnable offline, asks for no credentials, makes no outbound requests and avoids claiming unrestricted generative AI functionality. It offers starting templates for garages, auditors, salons and a generic service business, or a **fully manual starting point from scratch** with your own first section and fields.
 
 > **Use fictional data only.** No authentication or production-grade data protection exists in v0.1.
 
@@ -24,7 +24,16 @@ Open **http://127.0.0.1:8765** in the same computer's browser. You can change th
 3. Click **Approve and activate**.
 4. Before approval, add custom business sections or additional fields through the local browser; no AI is needed.
 5. Add fictional customer, vehicle and job records through the generated forms.
-6. Restart the server: data is stored in `moduvela.db`, and the homepage lists up to 20 recent proposals.
+6. Search records, edit a record, review the deletion confirmation, and export an entity as CSV or the whole approved application as JSON.
+7. Restart the server: data is stored in `moduvela.db`, and the homepage lists up to 20 recent proposals.
+
+## No-AI-first functionality (v0.2 development)
+
+- **Manual setup from scratch:** choose application name, first business section and fields; no template matching or LLM.
+- **Editable records:** view, search, update and delete fictional records in approved blueprints.
+- **Data export:** spreadsheet-conscious CSV export (formula-like cells neutralised) and exact-text JSON snapshots (export only; JSON import and restore are not yet implemented).
+- **Offline:** Python standard library and SQLite, loopback-only browser interface; nothing is sent to a cloud service.
+- **Limitations:** all fields are still text; no authentication, fine-grained role permissions, audit trail, undo, reliable backups or safe multi-user hosting. Deletion is permanent.
 
 ## Architecture
 

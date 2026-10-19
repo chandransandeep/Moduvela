@@ -25,10 +25,11 @@ This table is a **roadmap**, not a statement of implemented features. The curren
 - Owner review and approval before storing records.
 - Generic forms from blueprint schema.
 - **First non-AI customisation slice:** add a custom section and extend fields before approval.
+- **New offline data slice:** create a manual application from scratch, search/edit/delete records, CSV/JSON export (not yet import or backup/restore).
 
 ## Next implementation slices
 **0.2a:** improve custom designer with edit/rename/delete on drafts and documented JSON export.
-**0.2b:** typed fields and strict validation, then full CRUD and record search.
+**0.2b:** manual application setup, full record CRUD, search and CSV/JSON export — initial development slice implemented. Next: typed fields, stricter validation, pagination and import/restore.
 **0.2c:** CSV preview/import and backup/restore.
 **0.3:** deterministic state machine and approvals (separate from AI).
 **0.4:** properly authenticated and isolated multi-user foundation.
