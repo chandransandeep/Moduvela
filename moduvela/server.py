@@ -16,6 +16,10 @@ from .records import (
     list_records, get_record, update_record, delete_record,
     export_entity_csv, export_application_json,
 )
+from .workflows import (
+    draft_workflow, activate_workflow, get_workflow,
+    transition_record, available_transitions,
+)
 
 DB = os.environ.get("MODUVELA_DB", "moduvela.db")
 TOKEN = secrets.token_urlsafe(32)
@@ -154,6 +158,43 @@ class Handler(BaseHTTPRequestHandler):
                     content += "</ul></section>"
                 return self.send(content)
 
+            if url.path == "/workflow":
+                app_id=int(query["id"][0])
+                entity=query["entity"][0]
+                row,blueprint=load_blueprint(conn,app_id)
+                section=next((e for e in blueprint["entities"] if e["name"]==entity),None)
+                if not row["approved_at"] or section is None or "status" not in section["fields"]:
+                    raise ValueError("Approved section with status field required")
+                current=get_workflow(conn,app_id,entity,active_only=False)
+                content="<h2>Workflow for "+esc(entity)+"</h2>"
+                content+='<p class="warn">Demo only: this is an unguarded state machine. No identity or manager approval enforcement exists.</p>'
+                if current:
+                    spec=current["spec"]
+                    status="Active" if current["active_at"] else "Draft — not active"
+                    content+="<p><strong>"+status+"</strong></p><p>Initial: "+esc(spec["initial"])+"</p>"
+                    content+="<p>States: "+", ".join(map(esc,spec["states"]))+"</p>"
+                    content+="<p>Transitions: "+", ".join(esc(t["from"]+" → "+t["to"]) for t in spec["transitions"])+"</p>"
+                    if not current["active_at"]:
+                        content+=form_start("/workflow-activate")+hidden("id",app_id)+hidden("entity",entity)
+                        content+="<button>Activate this workflow</button></form>"
+                else:
+                    content+="<p>No workflow defined. Draft a simple state machine.</p>"
+                if not current or not current["active_at"]:
+                    content+=form_start("/workflow-draft")+hidden("id",app_id)+hidden("entity",entity)
+                    content+='<label>States (comma-separated)<input name="states" maxlength="650" value="new,in_progress,completed" required></label>'
+                    content+='<label>Initial state<input name="initial" maxlength="40" value="new" required></label>'
+                    content+='<label>Transitions (comma-separated, from&gt;to)<input name="transitions" maxlength="1900" value="new>in_progress,in_progress>completed" required></label>'
+                    content+='<button>Save workflow as inactive draft</button></form>'
+                events=conn.execute("SELECT record_id,from_state,to_state,created_at FROM workflow_events "
+                   "WHERE blueprint_id=? AND entity=? ORDER BY id DESC LIMIT 15",(app_id,entity)).fetchall()
+                if events:
+                    content+="<h3>Recent changes (local demo log)</h3><ul>"
+                    for e in events:
+                        content+="<li>Record "+esc(e["record_id"])+": "+esc(e["from_state"])+" → "+esc(e["to_state"])+"</li>"
+                    content+="</ul>"
+                content+='<p><a href="'+esc(link("/blueprint",id=app_id))+'">Back to application</a></p>'
+                return self.send(content)
+
             if url.path == "/blueprint":
                 app_id = int(query["id"][0])
                 row, blueprint = load_blueprint(conn, app_id)
@@ -168,13 +209,19 @@ class Handler(BaseHTTPRequestHandler):
                     name = entity["name"]
                     content += "<section><h3>" + esc(name) + "</h3>"
                     content += "<p>Fields: " + ", ".join(map(esc, entity["fields"])) + "</p>"
+                    if row["approved_at"] and "status" in entity["fields"]:
+                        content += '<p><a href="' + esc(link("/workflow",id=app_id,entity=name)) + '">Configure workflow stages for ' + esc(name) + '</a></p>'
                     if not row["approved_at"]:
                         content += form_start("/fields") + hidden("id", app_id) + hidden("entity", name)
                         content += '<label>Add fields (comma separated)<input name="fields" maxlength="800" required></label><button>Add fields</button></form>'
                     else:
                         content += form_start("/record") + hidden("id", app_id) + hidden("entity", name)
+                        active_flow=get_workflow(conn,app_id,name,active_only=True)
                         for field in entity["fields"]:
-                            content += "<label>" + esc(field) + hidden("nothing", "")[:0]
+                            if field=="status" and active_flow:
+                                content += "<p>Status starts at "+esc(active_flow["spec"]["initial"])+" (workflow enforced)</p>"
+                                continue
+                            content += "<label>" + esc(field)
                             content += '<input maxlength="500" name="field_' + esc(field) + '"></label>'
                         content += "<button>Add record</button></form>"
                         content += '<p><a href="' + esc(link("/export", id=app_id, entity=name, format="csv")) + '">Export ' + esc(name) + ' as CSV</a></p>'
@@ -190,7 +237,13 @@ class Handler(BaseHTTPRequestHandler):
                                 summary = "; ".join(esc(k) + ": " + esc(v) for k,v in record["values"].items())
                                 content += "<li>" + summary
                                 content += ' <a class="action" href="' + esc(link("/edit", id=app_id, entity=name, record=record["id"])) + '">Edit</a>'
-                                content += ' <a class="action" href="' + esc(link("/delete-confirm", id=app_id, entity=name, record=record["id"])) + '">Delete</a></li>'
+                                content += ' <a class="action" href="' + esc(link("/delete-confirm", id=app_id, entity=name, record=record["id"])) + '">Delete</a>'
+                                if active_flow:
+                                    for destination in available_transitions(conn,app_id,name,record["id"]):
+                                        content+=form_start("/transition-record")+hidden("id",app_id)+hidden("entity",name)
+                                        content+=hidden("record",record["id"])+hidden("destination",destination)
+                                        content+='<button>Move to '+esc(destination)+'</button></form>'
+                                content+="</li>"
                             content += "</ul>"
                         else:
                             content += "<p>No matching records.</p>"
@@ -215,7 +268,11 @@ class Handler(BaseHTTPRequestHandler):
                     content = "<h2>Edit " + esc(entity) + " record</h2>"
                     content += form_start("/update")
                     content += hidden("id", app_id) + hidden("entity", entity) + hidden("record", record_id)
+                    workflow=get_workflow(conn,app_id,entity,active_only=True)
                     for field, value in record["values"].items():
+                        if field=="status" and workflow:
+                            content+="<p>Current workflow status: "+esc(value)+" (use a workflow transition to change it)</p>"
+                            continue
                         content += '<label>' + esc(field) + '<input name="field_' + esc(field) + '" maxlength="500" value="' + esc(value) + '"></label>'
                     content += '<button>Save changes</button></form>'
                 else:
@@ -253,7 +310,27 @@ class Handler(BaseHTTPRequestHandler):
             fields = {k: v[0] for k,v in values.items()}
             if not secrets.compare_digest(fields.get("csrf", ""), TOKEN):
                 raise ValueError("Invalid request token")
-            if self.path == "/import-draft":
+            if self.path == "/workflow-draft":
+                app_id=int(fields["id"])
+                entity=fields["entity"]
+                states=[x.strip() for x in fields.get("states","").split(",")]
+                initial=fields.get("initial","").strip()
+                transitions=[]
+                for item in fields.get("transitions","").split(","):
+                    parts=item.strip().split(">")
+                    if len(parts)!=2:raise ValueError("Use from>to for each transition")
+                    transitions.append({"from":parts[0].strip(),"to":parts[1].strip()})
+                draft_workflow(conn,app_id,{
+                    "entity":entity,"initial":initial,"states":states,"transitions":transitions
+                })
+            elif self.path == "/workflow-activate":
+                app_id=int(fields["id"])
+                activate_workflow(conn,app_id,fields["entity"])
+            elif self.path == "/transition-record":
+                app_id=int(fields["id"])
+                transition_record(conn,app_id,fields["entity"],
+                                  int(fields["record"]),fields["destination"])
+            elif self.path == "/import-draft":
                 raw = fields.get("blueprint_json", "")
                 if len(raw) > 16000:
                     raise ValueError("Blueprint is too large")
