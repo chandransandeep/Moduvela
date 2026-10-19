@@ -134,3 +134,44 @@ def create_manual_blueprint(name: str, description: str, entity: str, fields: li
     }
     validate_blueprint(blueprint)
     return blueprint
+
+def validate_imported_blueprint(payload: dict) -> dict:
+    """Accept only safe Blueprint v1 *draft data* from the local browser.
+
+    Unsupported extensions (especially workflow or executable definitions)
+    are rejected rather than copied into the persisted proposal.
+    """
+    if not isinstance(payload, dict):
+        raise ValueError("Expected a blueprint object")
+    allowed = {'version', 'name', 'category', 'description',
+               'status', 'entities', 'limitations'}
+    if set(payload) - allowed:
+        raise ValueError("Unsupported blueprint properties")
+    name = payload.get('name')
+    description = payload.get('description')
+    if not isinstance(name, str) or not 1 <= len(name.strip()) <= 70:
+        raise ValueError("Invalid application name")
+    if not isinstance(description, str) or not 12 <= len(description) <= 5000:
+        raise ValueError("Invalid business description")
+    if payload.get('version') != 1 or payload.get('category') != 'custom':
+        raise ValueError("Only custom blueprint version 1 is accepted")
+    if payload.get('status') != 'proposal':
+        raise ValueError("Only unapproved proposals may be imported")
+    limits = payload.get('limitations', [])
+    if not isinstance(limits, list) or len(limits) > 12 or any(
+            not isinstance(x, str) or len(x) > 350 for x in limits):
+        raise ValueError("Invalid limitation details")
+    entities = payload.get('entities')
+    if not isinstance(entities, list):
+        raise ValueError("Invalid entity list")
+    if any(not isinstance(item, dict) or
+           set(item) != {'name','fields'} for item in entities):
+        raise ValueError("Unsupported entity properties")
+    result = {
+        'version': 1, 'name': name.strip(), 'category': 'custom',
+        'description': description, 'status': 'proposal',
+        'entities': entities,
+        'limitations': limits + ['Imported from local MicroAI as draft; owner review required']
+    }
+    validate_blueprint(result)
+    return result

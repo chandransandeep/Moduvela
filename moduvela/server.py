@@ -5,10 +5,12 @@ import html
 import json
 import os
 import secrets
+from pathlib import Path
 
 from .core import (
     init_db, compile_blueprint, create_manual_blueprint, store_proposal,
     load_blueprint, approve, add_record, add_custom_entity, add_custom_fields,
+    validate_imported_blueprint,
 )
 from .records import (
     list_records, get_record, update_record, delete_record,
@@ -86,12 +88,47 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header("Content-Length", "0")
         self.end_headers()
 
+
+    def serve_microai_asset(self, name):
+        """Serve only explicitly allowlisted static demo assets, locally."""
+        allowed = {'index.html', 'app.mjs', 'planner.mjs', 'engine.mjs'}
+        if name not in allowed:
+            return self.send('Not found', 404)
+        root = Path(__file__).resolve().parents[1] / 'experiments' / 'microai'
+        source = (root / name).read_text(encoding='utf-8')
+        if name == 'index.html':
+            source = source.replace('__MODUVELA_CSRF__', TOKEN)
+        payload = source.encode('utf-8')
+        self.send_response(200)
+        self.send_header('Content-Type', 'text/html; charset=utf-8'
+                         if name == 'index.html' else
+                         'text/javascript; charset=utf-8')
+        self.send_header('Content-Length', str(len(payload)))
+        self.send_header('Cache-Control', 'no-store')
+        self.send_header('X-Content-Type-Options', 'nosniff')
+        self.send_header('Content-Security-Policy',
+                         "default-src 'none'; script-src 'self'; "
+                         "style-src 'unsafe-inline'; form-action 'self'; "
+                         "base-uri 'none'; frame-ancestors 'none'")
+        self.end_headers()
+        self.wfile.write(payload)
+
     def do_GET(self):
         url = urlparse(self.path)
         query = parse_qs(url.query)
         try:
+            if url.path == '/microai':
+                self.send_response(302)
+                self.send_header('Location', '/microai/')
+                self.send_header('Content-Length', '0')
+                self.end_headers()
+                return
+            if url.path.startswith('/microai/'):
+                resource = url.path.removeprefix('/microai/') or 'index.html'
+                return self.serve_microai_asset(resource)
             if url.path == "/":
-                content = '<h2>Start with a suggestion</h2>'
+                content = '<section><h2>Offline Blueprint Designer</h2><p>Use the browser-based MicroAI assistant to review suggested business sections, relationships and questions. No paid AI or network access is required.</p><p><a href="/microai/">Open local MicroAI Blueprint Designer</a></p></section>'
+                content += '<h2>Start with a suggestion</h2>'
                 content += form_start("/propose")
                 content += ('<label>Describe your example business'
                             '<textarea name="description" rows="4" minlength="12" maxlength="5000" required>'
@@ -216,7 +253,13 @@ class Handler(BaseHTTPRequestHandler):
             fields = {k: v[0] for k,v in values.items()}
             if not secrets.compare_digest(fields.get("csrf", ""), TOKEN):
                 raise ValueError("Invalid request token")
-            if self.path == "/propose":
+            if self.path == "/import-draft":
+                raw = fields.get("blueprint_json", "")
+                if len(raw) > 16000:
+                    raise ValueError("Blueprint is too large")
+                blueprint = validate_imported_blueprint(json.loads(raw))
+                app_id = store_proposal(conn, blueprint)
+            elif self.path == "/propose":
                 app_id = store_proposal(conn, compile_blueprint(fields.get("description", "")))
             elif self.path == "/manual":
                 blueprint = create_manual_blueprint(
@@ -247,7 +290,7 @@ class Handler(BaseHTTPRequestHandler):
             else:
                 return self.send("Not found", 404)
             return self.redirect(app_id)
-        except (ValueError, TypeError, KeyError, UnicodeError, IndexError) as error:
+        except (ValueError, TypeError, KeyError, UnicodeError, IndexError, OSError) as error:
             return self.send("<p>" + esc(error) + "</p>", 400)
 
 
