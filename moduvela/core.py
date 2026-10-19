@@ -45,7 +45,15 @@ def init_db(path: str):
     conn.execute('PRAGMA foreign_keys=ON')
     conn.executescript('''CREATE TABLE IF NOT EXISTS blueprints(id INTEGER PRIMARY KEY, payload TEXT NOT NULL, approved_at TEXT);
     CREATE TABLE IF NOT EXISTS records(id INTEGER PRIMARY KEY, blueprint_id INTEGER NOT NULL, entity TEXT NOT NULL, payload TEXT NOT NULL, created_at TEXT NOT NULL,
-       FOREIGN KEY (blueprint_id) REFERENCES blueprints(id));''')
+       FOREIGN KEY (blueprint_id) REFERENCES blueprints(id));
+    CREATE TABLE IF NOT EXISTS workflow_specs(
+      blueprint_id INTEGER NOT NULL, entity TEXT NOT NULL, payload TEXT NOT NULL,
+      active_at TEXT, PRIMARY KEY(blueprint_id,entity),
+      FOREIGN KEY (blueprint_id) REFERENCES blueprints(id));
+    CREATE TABLE IF NOT EXISTS workflow_events(
+      id INTEGER PRIMARY KEY,blueprint_id INTEGER NOT NULL, entity TEXT NOT NULL,
+      record_id INTEGER NOT NULL,from_state TEXT NOT NULL,to_state TEXT NOT NULL,
+      created_at TEXT NOT NULL);''')
     return conn
 
 def store_proposal(conn, blueprint):
@@ -70,6 +78,13 @@ def add_record(conn, ident, entity, values):
     allowed=next((x['fields'] for x in blueprint['entities'] if x['name']==entity),None)
     if allowed is None: raise ValueError('Unknown entity')
     if not isinstance(values,dict) or any(k not in allowed for k in values): raise ValueError('Unknown field')
+    from .workflows import get_workflow
+    workflow = get_workflow(conn, ident, entity, active_only=True)
+    if workflow is not None:
+        initial = workflow["spec"]["initial"]
+        if "status" in values and values["status"] not in ("", initial):
+            raise ValueError("New record must start in the workflow initial state")
+        values = {**values, "status": initial}
     clean={field:str(values.get(field,''))[:500] for field in allowed}
     with conn:
         cur=conn.execute('INSERT INTO records(blueprint_id,entity,payload,created_at) VALUES (?,?,?,?)',

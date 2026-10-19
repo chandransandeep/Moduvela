@@ -60,6 +60,9 @@ def update_record(conn, app_id: int, entity: str, record_id: int, changes: dict)
         raise ValueError("Unknown or missing field")
     if any(not isinstance(v, str) or len(v) > 500 for v in changes.values()):
         raise ValueError("Each field must contain at most 500 characters")
+    from .workflows import get_workflow
+    if "status" in changes and get_workflow(conn, app_id, entity, active_only=True):
+        raise ValueError("Use a validated workflow transition to change status")
     existing = get_record(conn, app_id, entity, record_id)
     updated = {**existing["values"], **changes}
     with conn:
