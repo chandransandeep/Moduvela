@@ -79,7 +79,7 @@ const compactModel={version:1,algorithm:trained.model.algorithm,dimensions:DIMS,
  weightsBase64:toBase64(trained.model.weights),
  trainingNote:"Synthetic labelled examples only; measured test performance cannot be generalised."
 };
-const source='/** Generated deterministically by train.mjs. No runtime training. */\\nexport const MODEL = '+JSON.stringify(compactModel)+';\\n';
+const source='/** Generated deterministically by train.mjs. No runtime training. */\nexport const MODEL = '+JSON.stringify(compactModel)+';\n';
 const file=resolve(dirname(fileURLToPath(import.meta.url)),"model.generated.mjs");
 const check=process.argv.includes("--check");
 if(check){
