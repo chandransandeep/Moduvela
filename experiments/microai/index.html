@@ -11,6 +11,7 @@ main{max-width:1030px;margin:2rem auto;padding:1.8rem;background:white;border-ra
 h1{margin-bottom:.3rem}h2{font-size:1.15rem;margin:1.4rem 0 .6rem}
 p{line-height:1.55}.muted{color:#516477}.fine{font-size:.85rem}
 textarea{width:100%;min-height:130px;resize:vertical;padding:1rem;font:inherit;border:1px solid #9aacc0;border-radius:9px}
+input:not([type="checkbox"]){width:100%;padding:.55rem;margin:.4rem 0;border:1px solid #9aacc0;border-radius:7px;font:inherit}
 button{border:0;background:#1559ad;color:white;border-radius:9px;padding:.7rem 1rem;cursor:pointer;font:inherit;margin:.3rem .5rem .3rem 0}
 button.secondary{background:#e5edf7;color:#17385e}button:disabled{opacity:.5;cursor:not-allowed}
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:.8rem}
@@ -37,7 +38,9 @@ code{font-family:ui-monospace,monospace}#status{min-height:1.5rem}
 <section id="design" hidden>
  <h2>1. Review business sections</h2>
  <p class="muted fine">Select which record sections belong in the proposed application. Every selection remains a draft until separately approved inside Moduvela.</p>
+ <label for="app-name">Application name</label><input id="app-name" maxlength="70" aria-label="Application name">
  <div id="entity-options" class="grid"></div>
+ <p><button id="add-section" class="secondary" type="button">+ Add my own section</button></p>
  <h2>2. Possible relationships — not yet enforced</h2><ul id="relationships"></ul>
  <h2>3. Workflows / features not yet implemented</h2><ul id="unsupported"></ul>
  <h2>4. Questions to resolve</h2><ul id="questions"></ul>

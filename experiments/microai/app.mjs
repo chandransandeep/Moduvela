@@ -1,8 +1,10 @@
 import { proposeBusinessPlan, reviewedBlueprint } from "./planner.mjs";
 import { modelInformation } from "./engine.mjs";
+import {beginReview,editSection,addSection,removeSection,compileReviewedBlueprint} from "./review.mjs";
 const byId=id=>document.getElementById(id);
 const input=byId("description");
 let plan=null;
+let review=null;
 
 function line(target,text) {
   const li=document.createElement("li");
@@ -10,25 +12,48 @@ function line(target,text) {
   target.append(li);
 }
 function clear(target){target.replaceChildren();}
-function addLabel(name,fields,evidence) {
-  const div=document.createElement("div");
-  div.className="card";
+function editableSection(section){
+  const box=document.createElement("div");box.className="card";
   const label=document.createElement("label");
-  const checkbox=document.createElement("input");
-  checkbox.type="checkbox";checkbox.checked=true;checkbox.value=name;
-  checkbox.addEventListener("change",refreshPreview);
-  label.append(checkbox,document.createTextNode(name));
-  const fieldNote=document.createElement("small");
-  fieldNote.textContent="Fields: "+fields.join(", ");
-  const evidenceNote=document.createElement("small");
-  evidenceNote.textContent=evidence.length ? "Evidence: "+evidence.join(" / ") : "Possible section; verify relevance";
-  div.append(label,fieldNote,evidenceNote);
-  return div;
+  const check=document.createElement("input");check.type="checkbox";
+  check.checked=section.included;check.setAttribute("aria-label","Include "+section.name);
+  check.addEventListener("change",()=>{
+    review=editSection(review,section.key,{included:check.checked});
+    refreshPreview();
+  });
+  label.append(check,document.createTextNode(" Include this section"));
+  const name=document.createElement("input");
+  name.value=section.name;name.maxLength=40;name.setAttribute("aria-label","Section name");
+  name.addEventListener("input",()=>{
+    review=editSection(review,section.key,{name:name.value});refreshPreview();
+  });
+  const fields=document.createElement("input");
+  fields.value=section.fields;fields.setAttribute("aria-label","Comma-separated fields");
+  fields.addEventListener("input",()=>{
+    review=editSection(review,section.key,{fields:fields.value});refreshPreview();
+  });
+  const evidence=document.createElement("small");
+  evidence.textContent=section.evidence.length
+    ? "Evidence: "+section.evidence.join(" / ") : "Added manually by you";
+  const fieldsLabel=document.createElement("small");
+  fieldsLabel.textContent="Fields (comma-separated, lowercase identifiers)";
+  box.append(label,document.createTextNode("Section name"),name,fieldsLabel,fields,evidence);
+  if(section.origin==="manual"){
+    const remove=document.createElement("button");remove.className="secondary";
+    remove.textContent="Remove section";
+    remove.addEventListener("click",()=>{
+      review=removeSection(review,section.key);renderEditor();refreshPreview();
+    });
+    box.append(remove);
+  }
+  return box;
 }
-function selected(){
-  return [...byId("entity-options").querySelectorAll('input[type="checkbox"]:checked')].map(x=>x.value);
+function renderEditor(){
+  const cards=byId("entity-options");clear(cards);
+  for(const section of review.sections)cards.append(editableSection(section));
+  byId("app-name").value=review.name;
 }
-function draft(){return reviewedBlueprint(plan,selected());}
+function draft(){return compileReviewedBlueprint(plan,review);}
 function refreshPreview() {
   try{
     const blueprint=draft();
@@ -48,14 +73,14 @@ function availableImport(){
 function describe() {
   try{
     plan=proposeBusinessPlan(input.value);
+    review=plan.blueprint?beginReview(plan):null;
     byId("design").hidden=false;
     byId("status").textContent=plan.blueprint
       ? "Draft suggestion ready. Select sections and review unresolved requirements."
       : "No safe section suggested. Please clarify what information the application should store.";
     const options=byId("entity-options");clear(options);
-    for(const entity of plan.entities)
-      options.append(addLabel(entity.name,entity.fields,entity.evidence));
-    if(!plan.entities.length)line(options,"No supported sections detected. Improve the description.");
+    if(review)renderEditor();
+    else line(options,"No supported sections detected. Improve the description.");
     const relations=byId("relationships");clear(relations);
     for(const r of plan.relationships)
       line(relations,r.from+" → "+r.to+": "+r.reason+" (candidate only)");
@@ -83,7 +108,7 @@ function describe() {
     },null,2);
     refreshPreview();
   }catch(e){
-    plan=null;
+    plan=null;review=null;
     byId("design").hidden=true;
     byId("status").textContent=e.message;
   }
@@ -110,6 +135,15 @@ function save(){
   document.body.append(form);form.submit();
 }
 byId("analyse").addEventListener("click",describe);
+byId("app-name").addEventListener("input",()=>{
+  if(!review)return;
+  review.name=byId("app-name").value;refreshPreview();
+});
+byId("add-section").addEventListener("click",()=>{
+  if(!review)return;
+  try{review=addSection(review);renderEditor();refreshPreview();}
+  catch(e){byId("status").textContent=e.message;}
+});
 byId("download").addEventListener("click",download);
 byId("save").addEventListener("click",save);
 describe();

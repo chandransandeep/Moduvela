@@ -57,3 +57,7 @@ The evaluation script contains 20 hand-authored synthetic examples and reports r
 7. Refuse unsupported or high-risk requests and ask clear questions before saving.
 
 **Success criterion:** someone can define a useful small-business application after a short guided review, even if MicroAI is fully disabled. Inference size is less important than the accuracy and safety of the resulting blueprint.
+
+## v0.4: correct the generated blueprint before saving
+
+The Blueprint Designer now permits renaming suggested sections, editing fields, excluding sections, changing the application name and adding new sections. Validation runs on the device before JSON export or import; the Python server independently validates imports. Corrections do **not** train a model or leave the browser automatically. The output remains a draft with **no executable workflow rules**.
