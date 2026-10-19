@@ -93,3 +93,9 @@ See [MicroAI quality and limitations](docs/MICROAI-QUALITY.md). Use fictional da
 ## MicroAI v0.4: human correction and field suggestions
 
 The local Blueprint Designer now supports **editing an application name, renaming suggested sections, editing comma-separated field names, selecting/removing sections and adding new custom sections**. The offline field extractor suggests a few explicitly mentioned attributes (such as `serial_number`, `warranty_date`, `repair_cost`, `customer_email`), or asks a question when its destination is ambiguous. The preview is validated locally; the Python server validates it again and accepts it **only as an unapproved draft**. No AI API requests, model downloads or executable generated workflows are involved. See [MicroAI quality guide](docs/MICROAI-QUALITY.md).
+
+## New research pipeline and executable local state machines
+
+MicroAI now includes a **supervised trained** CPU-only, 8 KB-weights multi-label classifier in the browser. It is an *advisory* side-by-side comparison, because it currently performs worse than deterministic business-term rules on synthetic held-out data. Its training corpus and all scripts are committed and reproducible: see [dataset policy](docs/MICROAI-DATASET.md) and [blueprint contracts](docs/BLUEPRINT-CONTRACTS.md). Artificial examples are **not independent real-world validation**.
+
+A separate local deterministic runtime now supports explicitly activated **state-machine workflows** and **record-to-record links**. For a fictional approved app with Jobs and Customers, configure status stages and a Jobs.customer link from the corresponding links on its application page. Unsupported manager approvals are still unimplemented, and no login or production security exists. Use fictional data only.

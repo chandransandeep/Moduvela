@@ -40,3 +40,10 @@ Generic industry support comes from reusable primitives, not a huge list of supe
 ## Zero-subsidy optional AI policy
 
 Free users do not receive operator-funded LLM calls. A demo stays no-AI. Optional future AI requires customer-funded BYOK, prepaid credits or local inference and server-side rate, token and budget enforcement. See [ADR-0002](ADR-0002-AI-COST-POLICY.md). This policy does not eliminate ordinary hosting and support costs.
+
+## Research and implementation checkpoint
+
+- Supervised compact classifier implemented as **advisory** browser inference: the synthetic held-out evaluation currently underperforms deterministic rules; improve dataset quality before enabling automatic suggestions.
+- Synthetic labelled corpus (720 cases) + 24 independent project-authored challenges and 36 manually written design cards; NOT external independent annotation.
+- Stateful deterministic workflows (draft/activate/transition) and explicit record links (draft/activate/reference validation) now implemented locally.
+- **Not implemented:** role-based approvals, typed numeric/currency fields, cross-device sync, database migrations, secure multi-user permissions, real certificate issuance. No real business data.
