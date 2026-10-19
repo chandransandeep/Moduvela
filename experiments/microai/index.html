@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Moduvela MicroAI — Offline Experiment</title>
+<style>
+body{font:16px/1.5 system-ui, sans-serif;max-width:850px;margin:2rem auto;padding:0 1rem;background:#f2f5fa;color:#223147}
+main{background:white;border-radius:15px;padding:2rem;box-shadow:0 5px 24px #0a152313}
+textarea{width:100%;height:120px;box-sizing:border-box;padding:1rem;font:inherit;border:1px solid #899ba9;border-radius:8px}
+button{background:#1458aa;color:white;border:0;border-radius:8px;padding:.75rem 1.2rem;font:inherit;cursor:pointer}
+pre{white-space:pre-wrap;word-wrap:break-word;background:#eef3f8;padding:1rem;border-radius:9px;max-height:520px;overflow:auto}
+.notice{padding:1rem;background:#fff5dd;border-radius:9px}small{color:#4c6075}p{line-height:1.6}
+</style></head><body><main>
+<h1>Moduvela MicroAI</h1><p><strong>Experimental on-device business interpreter</strong></p>
+<p>Entirely offline, no API calls, no LLM and no GPU required. This demo uses a very small supervised nearest-example text classifier with fixed, synthetic training examples, then proposes a Moduvela-compatible blueprint. It is <strong>not</strong> a full natural-language model.</p>
+<label for="description">Describe your fictional business</label>
+<textarea id="description">I run a repair shop. We record customers and jobs, track spare parts, and send invoices. I want approval before ordering expensive items.</textarea>
+<p><button id="run">Suggest blueprint locally</button> <button id="download" type="button">Download proposed JSON</button></p>
+<p id="status" role="status"></p>
+<div class="notice">Experimental: review and edit proposals before using them. No model inference or server calls. Do not enter personal or confidential business information.</div>
+<h2>Suggested blueprint</h2><pre id="output">Press Suggest blueprint locally.</pre>
+<h2>Diagnostics</h2><pre id="diagnostics"></pre>
+<small>This static experiment does not automatically create or approve applications in the Moduvela server. Workflow features are labelled separately because they are not implemented yet.</small>
+<script type="module">
+import {analyseDescription, modelInformation} from "./engine.mjs";
+const input=document.getElementById("description");
+const output=document.getElementById("output");
+const diag=document.getElementById("diagnostics");
+const status=document.getElementById("status");
+let candidate=null;
+diag.textContent=JSON.stringify(modelInformation(),null,2);
+function run() {
+ try {
+  const result=analyseDescription(input.value);
+  candidate=result.blueprint;
+  output.textContent=result.blueprint ? JSON.stringify(result.blueprint,null,2) : result.clarification;
+  status.textContent=(result.futureFeatures.length ? "Requested future features: "+result.futureFeatures.join(", ")+". " : "")+result.clarification;
+  diag.textContent=JSON.stringify({model:modelInformation(),matches:result.matches,note:result.note},null,2);
+ } catch(e) {
+  candidate=null;status.textContent=e.message;output.textContent="No blueprint generated.";
+ }
+}
+document.getElementById("run").addEventListener("click",run);
+document.getElementById("download").addEventListener("click",()=>{
+ if(!candidate){status.textContent="Generate a draft proposal first.";return;}
+ const blob=new Blob([JSON.stringify(candidate,null,2)],{type:"application/json"});
+ const href=URL.createObjectURL(blob);const link=document.createElement("a");
+ link.href=href;link.download="moduvela-draft-blueprint.json";link.click();
+ URL.revokeObjectURL(href);
+});
+run();
+</script></main></body></html>
