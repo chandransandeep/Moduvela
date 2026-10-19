@@ -65,6 +65,8 @@ def update_record(conn, app_id: int, entity: str, record_id: int, changes: dict)
         raise ValueError("Use a validated workflow transition to change status")
     existing = get_record(conn, app_id, entity, record_id)
     updated = {**existing["values"], **changes}
+    from .relationships import check_references
+    check_references(conn, app_id, entity, updated)
     with conn:
         conn.execute(
             "UPDATE records SET payload=? WHERE id=? AND blueprint_id=? AND entity=?",
@@ -75,6 +77,8 @@ def update_record(conn, app_id: int, entity: str, record_id: int, changes: dict)
 def delete_record(conn, app_id: int, entity: str, record_id: int) -> None:
     """Hard delete, only called following an explicit browser confirmation step."""
     get_record(conn, app_id, entity, record_id)
+    from .relationships import check_deletion
+    check_deletion(conn, app_id, entity, record_id)
     with conn:
         conn.execute(
             "DELETE FROM records WHERE id=? AND blueprint_id=? AND entity=?",

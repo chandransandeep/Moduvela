@@ -46,6 +46,11 @@ def init_db(path: str):
     conn.executescript('''CREATE TABLE IF NOT EXISTS blueprints(id INTEGER PRIMARY KEY, payload TEXT NOT NULL, approved_at TEXT);
     CREATE TABLE IF NOT EXISTS records(id INTEGER PRIMARY KEY, blueprint_id INTEGER NOT NULL, entity TEXT NOT NULL, payload TEXT NOT NULL, created_at TEXT NOT NULL,
        FOREIGN KEY (blueprint_id) REFERENCES blueprints(id));
+    CREATE TABLE IF NOT EXISTS relationship_specs(
+      blueprint_id INTEGER NOT NULL,source_entity TEXT NOT NULL,source_field TEXT NOT NULL,
+      target_entity TEXT NOT NULL, active_at TEXT,
+      PRIMARY KEY(blueprint_id,source_entity,source_field),
+      FOREIGN KEY(blueprint_id) REFERENCES blueprints(id));
     CREATE TABLE IF NOT EXISTS workflow_specs(
       blueprint_id INTEGER NOT NULL, entity TEXT NOT NULL, payload TEXT NOT NULL,
       active_at TEXT, PRIMARY KEY(blueprint_id,entity),
@@ -86,6 +91,8 @@ def add_record(conn, ident, entity, values):
             raise ValueError("New record must start in the workflow initial state")
         values = {**values, "status": initial}
     clean={field:str(values.get(field,''))[:500] for field in allowed}
+    from .relationships import check_references
+    check_references(conn, ident, entity, clean)
     with conn:
         cur=conn.execute('INSERT INTO records(blueprint_id,entity,payload,created_at) VALUES (?,?,?,?)',
           (ident,entity,json.dumps(clean),datetime.now(timezone.utc).isoformat()))
