@@ -2,7 +2,7 @@
 const HINTS=[
 {name:"serial_number",pattern:/\bserial\s*(?:numbers?|nos?\.?|#)\b/i,targets:["Jobs","Inventory"]},
 {name:"warranty_date",pattern:/\b(?:warranty\s+(?:expiry\s+)?date|warranty\s+expiration)\b/i,targets:["Jobs","Inventory"]},
-{name:"repair_cost",pattern:/\b(?:repair\s+cost|repair\s+price|repair\s+value)\b/i,targets:["Jobs"]},
+{name:"repair_cost",pattern:/\b(?:repair\s+costs?|repair\s+prices?|repair\s+values?)\b/i,targets:["Jobs"]},
 {name:"estimated_cost",pattern:/\b(?:estimated\s+cost|cost\s+estimate|estimated\s+price)\b/i,targets:["Jobs"]},
 {name:"customer_email",pattern:/\b(?:customer\s+email|client\s+email|email\s+address(?:es)?)\b/i,targets:["Customers"]},
 {name:"postcode",pattern:/\b(?:postcodes?|zip\s+codes?|postal\s+codes?)\b/i,targets:["Customers"]},
