@@ -45,6 +45,8 @@ class DraftImportBrowserTests(unittest.TestCase):
                 token=re.search(r'id="csrf" value="([^"]+)"',page).group(1)
                 script=urlopen(base+"/microai/planner.mjs").read().decode()
                 self.assertIn("proposeBusinessPlan",script)
+                review=urlopen(base+"/microai/review.mjs").read().decode()
+                self.assertIn("compileReviewedBlueprint", review)
                 payload={
                     "version":1,"name":"Fictional workshop","category":"custom",
                     "description":"We record fictional jobs for workshop tests",
