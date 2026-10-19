@@ -81,6 +81,9 @@ function describe() {
     const options=byId("entity-options");clear(options);
     if(review)renderEditor();
     else line(options,"No supported sections detected. Improve the description.");
+    const extras=byId("extra-fields");clear(extras);
+    for(const f of plan.fieldSuggestions||[])line(extras,f.section+"."+f.field+" — "+f.evidence+" (review/edit above)");
+    if(!plan.fieldSuggestions?.length)line(extras,"No additional field suggestions identified.");
     const relations=byId("relationships");clear(relations);
     for(const r of plan.relationships)
       line(relations,r.from+" → "+r.to+": "+r.reason+" (candidate only)");

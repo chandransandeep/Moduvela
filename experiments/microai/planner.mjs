@@ -5,6 +5,7 @@
  * No LLM, provider cost, network calls or source-code generation.
  */
 import { analyseDescription, modelInformation } from "./engine.mjs";
+import {suggestFields} from "./fields.mjs";
 
 const ENTITY_TERMS = Object.freeze({
   Customers: /\b(?:customer|client|member|patient|tenant)s?\b/i,
@@ -93,7 +94,7 @@ export function proposeBusinessPlan(text) {
   const analysis = analyseDescription(text);
   const initial = analysis.blueprint?.entities || [];
   const excluded = [];
-  const entities = initial.filter(e=>{
+  let entities = initial.filter(e=>{
     if (explicitExclusion(text,e.name)) {
       excluded.push({ name:e.name, reason:"Explicit negative wording — review before exclusion" });
       return false;
@@ -104,6 +105,8 @@ export function proposeBusinessPlan(text) {
     evidence: supportingEvidence(text,entity.name),
     reviewRequired: true,
   }));
+  const extracted=suggestFields(text,entities);
+  entities=extracted.entities;
   const approval = approvalRequest(text);
   const unsupported = [];
   if (approval && !approval.excluded) unsupported.push(approval);
@@ -116,7 +119,7 @@ export function proposeBusinessPlan(text) {
     unsupported.push({kind:"certificate_generation",status:"suggestion_only",
       implemented:false, evidence:supportingEvidence(text,"Certificates")});
   const relationships=relationshipCandidates(entities);
-  const questions=[];
+  const questions=[...extracted.questions];
   if(!entities.length)questions.push("What information should this application store? Give an example record.");
   if(approval && !approval.excluded){
     if(!approval.role)questions.push("Who is allowed to approve the request?");
@@ -140,6 +143,7 @@ export function proposeBusinessPlan(text) {
     : null;
   return {
     version:1, text, blueprint, entities, excluded, relationships,
+    fieldSuggestions:extracted.suggestions,
     unsupported, questions:questions.slice(0,6),
     notes:[
       "No external model, GPU, API token or network needed.",

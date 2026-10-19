@@ -68,3 +68,11 @@ test("unrelated statement asks for clarification, not invented software",()=>{
  assert.equal(p.blueprint,null);
  assert.ok(p.questions.length>0);
 });
+
+test("contextual field extraction extends draft but still needs review",()=>{
+ const p=proposeBusinessPlan("Our garage tracks customer repair jobs including serial numbers and repair costs.");
+ const jobs=p.entities.find(x=>x.name==="Jobs");
+ assert.ok(jobs?.fields.includes("serial_number"));
+ assert.ok(jobs?.fields.includes("repair_cost"));
+ assert.ok(p.fieldSuggestions.some(x=>x.field==="serial_number"&&x.reviewRequired));
+});

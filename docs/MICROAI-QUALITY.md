@@ -61,3 +61,7 @@ The evaluation script contains 20 hand-authored synthetic examples and reports r
 ## v0.4: correct the generated blueprint before saving
 
 The Blueprint Designer now permits renaming suggested sections, editing fields, excluding sections, changing the application name and adding new sections. Validation runs on the device before JSON export or import; the Python server independently validates imports. Corrections do **not** train a model or leave the browser automatically. The output remains a draft with **no executable workflow rules**.
+
+## Local schema field hints
+
+A small, explicit attribute extractor now proposes fields such as serial numbers, warranty dates, repair costs, email addresses and certificate expiry. It requires supporting text and asks a question rather than choosing arbitrarily when several sections could own the field. Each hint remains editable, must pass Blueprint v1 validation and never generates executable code. This remains a rule-based component, not trained natural-language understanding.
