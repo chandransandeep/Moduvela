@@ -83,3 +83,9 @@ For customers who want to **describe** a business instead of filling in a guided
 MicroAI v0 is a domain-specific **weighted nearest-example text classifier**, not a language model. It recognises some business concepts and proposes Moduvela version-1 fields; it does not create arbitrary applications or run workflows. It requires no AI provider, model download, GPU, or inference service. The classifier is completely optional, with all production-facing capabilities remaining in the deterministic non-AI engine.
 
 Run the standalone static demonstration locally with `python -m http.server 8000 --bind 127.0.0.1` and open `http://127.0.0.1:8000/experiments/microai/`. Its suggestions are experimental and are not automatically applied to the main runtime.
+
+## MicroAI integrated Blueprint Designer (experimental)
+
+Open **[http://127.0.0.1:8765/microai/](http://127.0.0.1:8765/microai/)** while the local server is running. It provides browser-only requirement interpretation, evidence-backed suggested sections, an editable selection, questions about ambiguous workflow requirements, and an explicit **Save as draft** action. The local server validates this draft and requires separate approval before records can be created. Neither a model download nor paid AI API calls are needed. The current prototype is **not** an AI-generated working workflow engine: relationships and conditional approvals are unimplemented suggestions.
+
+See [MicroAI quality and limitations](docs/MICROAI-QUALITY.md). Use fictional data only.

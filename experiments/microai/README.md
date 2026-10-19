@@ -50,3 +50,7 @@ Evaluate held-out businesses, adversarial descriptions, ambiguity, languages, me
 ## Drone repair regression fixture
 
 The test suite now includes the exact fictional drone repair workshop scenario with parts, customer drop-offs, completion certificates and manager approvals. Expected: records for Customers, Jobs, Inventory and Certificates; approval remains an unsupported requested feature.
+
+## Integrated experiment (v0.3)
+
+The latest UI now provides a structured review of suggested sections, evidence, relationships, workflow gaps and clarification questions. With the Python Moduvela server running, open `http://127.0.0.1:8765/microai/` to save a selected **unapproved draft** into the main system. See [quality guide](../../docs/MICROAI-QUALITY.md). The standalone static browser preview remains usable without saving to the Python server.
