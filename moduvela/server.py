@@ -20,6 +20,8 @@ from .workflows import (
     draft_workflow, activate_workflow, get_workflow,
     transition_record, available_transitions,
 )
+from .relationships import draft_relation,activate_relation,link_specs
+
 
 DB = os.environ.get("MODUVELA_DB", "moduvela.db")
 TOKEN = secrets.token_urlsafe(32)
@@ -49,7 +51,7 @@ def page(content):
 <style>
 body{font:16px system-ui;color:#182a40;background:#f2f5f9;max-width:980px;margin:2rem auto;padding:0 1rem}
 main{background:white;border-radius:16px;padding:2rem;box-shadow:0 5px 28px #14253a12}
-input,textarea{display:block;box-sizing:border-box;width:100%;padding:.65rem;margin:.25rem 0 1rem;border:1px solid #96a7ba;border-radius:7px}
+input,textarea,select{display:block;box-sizing:border-box;width:100%;padding:.65rem;margin:.25rem 0 1rem;border:1px solid #96a7ba;border-radius:7px}
 label{font-weight:500}button{background:#175ba8;color:white;border:0;border-radius:7px;padding:.7rem 1rem;cursor:pointer}
 section{border-top:1px solid #d8e2ee;padding:1.1rem 0}a{color:#07539a}
 .action{display:inline-block;margin-right:.8rem;margin-top:.5rem}
@@ -158,6 +160,34 @@ class Handler(BaseHTTPRequestHandler):
                     content += "</ul></section>"
                 return self.send(content)
 
+            if url.path == "/relations":
+                app_id=int(query["id"][0])
+                source=query["source"][0]
+                row,blueprint=load_blueprint(conn,app_id)
+                parts={e["name"]:e["fields"] for e in blueprint["entities"]}
+                if not row["approved_at"] or source not in parts or len(parts)<2:
+                    raise ValueError("An approved application with two sections is needed")
+                content="<h2>Record links for "+esc(source)+"</h2>"
+                content+="<p class='warn'>Configure links before creating source records. A linked field stores the numeric ID of an existing target record; this is not automatic MicroAI deployment.</p>"
+                connections=link_specs(conn,app_id,source,active_only=False)
+                for rel in connections:
+                    state="Active" if rel["active_at"] else "Draft"
+                    content+="<p>"+esc(source+"."+rel["field"]+" → "+rel["target"])+" — "+state+"</p>"
+                    if not rel["active_at"]:
+                        content+=form_start("/relation-activate")+hidden("id",app_id)
+                        content+=hidden("source",source)+hidden("field",rel["field"])
+                        content+="<button>Activate this link</button></form>"
+                content+=form_start("/relation-draft")+hidden("id",app_id)+hidden("source",source)
+                content+='<label>Field containing a target record ID<select name="field" required>'
+                for f in parts[source]:content+='<option value="'+esc(f)+'">'+esc(f)+'</option>'
+                content+="</select></label>"
+                content+='<label>Target section<select name="target" required>'
+                for target in parts:
+                    if target!=source:content+='<option value="'+esc(target)+'">'+esc(target)+'</option>'
+                content+='</select></label><button>Save link as inactive draft</button></form>'
+                content+='<p><a href="'+esc(link("/blueprint",id=app_id))+'">Back to application</a></p>'
+                return self.send(content)
+
             if url.path == "/workflow":
                 app_id=int(query["id"][0])
                 entity=query["entity"][0]
@@ -209,6 +239,8 @@ class Handler(BaseHTTPRequestHandler):
                     name = entity["name"]
                     content += "<section><h3>" + esc(name) + "</h3>"
                     content += "<p>Fields: " + ", ".join(map(esc, entity["fields"])) + "</p>"
+                    if row["approved_at"] and len(blueprint["entities"])>1:
+                        content += '<p><a href="' + esc(link("/relations",id=app_id,source=name)) + '">Configure record links from ' + esc(name) + '</a></p>'
                     if row["approved_at"] and "status" in entity["fields"]:
                         content += '<p><a href="' + esc(link("/workflow",id=app_id,entity=name)) + '">Configure workflow stages for ' + esc(name) + '</a></p>'
                     if not row["approved_at"]:
@@ -222,6 +254,8 @@ class Handler(BaseHTTPRequestHandler):
                                 content += "<p>Status starts at "+esc(active_flow["spec"]["initial"])+" (workflow enforced)</p>"
                                 continue
                             content += "<label>" + esc(field)
+                            links=[r for r in link_specs(conn,app_id,name,active_only=True) if r["field"]==field]
+                            if links:content += '<small>Enter the numeric record ID from ' + esc(links[0]["target"]) + ' (leave blank if none).</small>'
                             content += '<input maxlength="500" name="field_' + esc(field) + '"></label>'
                         content += "<button>Add record</button></form>"
                         content += '<p><a href="' + esc(link("/export", id=app_id, entity=name, format="csv")) + '">Export ' + esc(name) + ' as CSV</a></p>'
@@ -234,7 +268,7 @@ class Handler(BaseHTTPRequestHandler):
                         if matches:
                             content += "<ul>"
                             for record in matches:
-                                summary = "; ".join(esc(k) + ": " + esc(v) for k,v in record["values"].items())
+                                summary = "Record #" + esc(record["id"]) + " — " + "; ".join(esc(k) + ": " + esc(v) for k,v in record["values"].items())
                                 content += "<li>" + summary
                                 content += ' <a class="action" href="' + esc(link("/edit", id=app_id, entity=name, record=record["id"])) + '">Edit</a>'
                                 content += ' <a class="action" href="' + esc(link("/delete-confirm", id=app_id, entity=name, record=record["id"])) + '">Delete</a>'
@@ -310,7 +344,15 @@ class Handler(BaseHTTPRequestHandler):
             fields = {k: v[0] for k,v in values.items()}
             if not secrets.compare_digest(fields.get("csrf", ""), TOKEN):
                 raise ValueError("Invalid request token")
-            if self.path == "/workflow-draft":
+            if self.path == "/relation-draft":
+                app_id=int(fields["id"])
+                draft_relation(conn,app_id,{
+                    "source":fields["source"],"field":fields["field"],"target":fields["target"]
+                })
+            elif self.path == "/relation-activate":
+                app_id=int(fields["id"])
+                activate_relation(conn,app_id,fields["source"],fields["field"])
+            elif self.path == "/workflow-draft":
                 app_id=int(fields["id"])
                 entity=fields["entity"]
                 states=[x.strip() for x in fields.get("states","").split(",")]
