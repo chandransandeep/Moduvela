@@ -54,3 +54,7 @@ The test suite now includes the exact fictional drone repair workshop scenario w
 ## Integrated experiment (v0.3)
 
 The latest UI now provides a structured review of suggested sections, evidence, relationships, workflow gaps and clarification questions. With the Python Moduvela server running, open `http://127.0.0.1:8765/microai/` to save a selected **unapproved draft** into the main system. See [quality guide](../../docs/MICROAI-QUALITY.md). The standalone static browser preview remains usable without saving to the Python server.
+
+## v0.4 — Correct and extend a proposed application
+
+Select or deselect suggested sections, rename each section, add/edit its fields, and create new custom sections in the offline review UI. Strict schema checks must pass before JSON export or saving to the Python server. The local attribute matcher can propose fields directly mentioned in business descriptions and asks for clarification about ambiguous ownership. These are rule-based hints, **not a learned language model**. Owner corrections are not transmitted or automatically used for model training.

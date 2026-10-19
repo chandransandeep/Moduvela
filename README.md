@@ -89,3 +89,7 @@ Run the standalone static demonstration locally with `python -m http.server 8000
 Open **[http://127.0.0.1:8765/microai/](http://127.0.0.1:8765/microai/)** while the local server is running. It provides browser-only requirement interpretation, evidence-backed suggested sections, an editable selection, questions about ambiguous workflow requirements, and an explicit **Save as draft** action. The local server validates this draft and requires separate approval before records can be created. Neither a model download nor paid AI API calls are needed. The current prototype is **not** an AI-generated working workflow engine: relationships and conditional approvals are unimplemented suggestions.
 
 See [MicroAI quality and limitations](docs/MICROAI-QUALITY.md). Use fictional data only.
+
+## MicroAI v0.4: human correction and field suggestions
+
+The local Blueprint Designer now supports **editing an application name, renaming suggested sections, editing comma-separated field names, selecting/removing sections and adding new custom sections**. The offline field extractor suggests a few explicitly mentioned attributes (such as `serial_number`, `warranty_date`, `repair_cost`, `customer_email`), or asks a question when its destination is ambiguous. The preview is validated locally; the Python server validates it again and accepts it **only as an unapproved draft**. No AI API requests, model downloads or executable generated workflows are involved. See [MicroAI quality guide](docs/MICROAI-QUALITY.md).
