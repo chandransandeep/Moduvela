@@ -57,6 +57,8 @@ class DraftImportBrowserTests(unittest.TestCase):
                 self.assertIn("loadLocalGenerator",local_generator)
                 capability_js=urlopen(base+"/microai/capabilities.mjs").read().decode()
                 self.assertIn("detectHardware",capability_js)
+                discovery=urlopen(base+"/microai/catalog_planner.mjs").read().decode()
+                self.assertIn("composeBusinessConcepts",discovery)
                 review=urlopen(base+"/microai/review.mjs").read().decode()
                 self.assertIn("compileReviewedBlueprint", review)
                 payload={

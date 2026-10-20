@@ -85,12 +85,27 @@ function describe() {
     plan=proposeBusinessPlan(input.value);
     review=plan.blueprint?beginReview(plan):null;
     byId("design").hidden=false;
+    // A new business must not inherit the previous business's application name.
+    byId("app-name").value=review?review.name:"";
+    byId("add-section").disabled=!review;
+    byId("start-manually").hidden=!!review;
+    clear(byId("semantic-suggestions"));clear(byId("deep-results"));clear(byId("deep-designs"));
+    byId("semantic-status").textContent="Run optional semantic matching again for this updated description.";
+    byId("deep-status").textContent="Run optional local generation again for this updated description.";
     byId("status").textContent=plan.blueprint
       ? "Draft suggestion ready. Select sections and review unresolved requirements."
       : "No safe section suggested. Please clarify what information the application should store.";
     const options=byId("entity-options");clear(options);
     if(review)renderEditor();
-    else line(options,"No supported sections detected. Improve the description.");
+    else line(options,"No section was recognised. Choose 'Start a blank blueprint' or describe the records you need.");
+    const catalog=byId("catalog-explanations");clear(catalog);
+    if(plan.catalog){
+      for(const name of plan.catalog.direct)
+        line(catalog,name+": matched against business terminology (review this suggestion).");
+      for(const name of plan.catalog.inferred)
+        line(catalog,name+": inferred as potentially useful, not explicitly requested. Confirm or deselect.");
+    }
+    if(!catalog.children.length)line(catalog,"No additional catalogue suggestions.");
     const extras=byId("extra-fields");clear(extras);
     for(const f of plan.fieldSuggestions||[])line(extras,f.section+"."+f.field+" — "+f.evidence+" (review/edit above)");
     if(!plan.fieldSuggestions?.length)line(extras,"No additional field suggestions identified.");
@@ -295,6 +310,8 @@ async function runDeep(){
    }};
    review=beginReview(plan);
    byId("design").hidden=false;
+   byId("add-section").disabled=false;
+   byId("start-manually").hidden=true;
    renderEditor();
   }
   for(const candidate of output.entities){
@@ -333,6 +350,20 @@ byId("analyse").addEventListener("click",describe);
 byId("app-name").addEventListener("input",()=>{
   if(!review)return;
   review.name=byId("app-name").value;refreshPreview();
+});
+byId("start-manually").addEventListener("click",()=>{
+  if(!plan||review)return;
+  plan={...plan,blueprint:{
+    version:1,name:"Custom Business Operations",category:"custom",
+    description:input.value,status:"proposal",entities:[],
+    limitations:["Manually defined blueprint; review all fields",
+      "No executable workflows or permissions have been created"]
+  }};
+  review=addSection(beginReview(plan));
+  byId("add-section").disabled=false;
+  byId("start-manually").hidden=true;
+  renderEditor();refreshPreview();
+  byId("status").textContent="Blank draft started. Rename the section and choose fields, then review.";
 });
 byId("add-section").addEventListener("click",()=>{
   if(!review)return;

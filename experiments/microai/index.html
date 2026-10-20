@@ -28,7 +28,7 @@ code{font-family:ui-monospace,monospace}#status{min-height:1.5rem}
 </head>
 <body>
 <main>
-<h1>Moduvela Blueprint Designer <small>MicroAI · v0.7 adaptive local AI</small></h1>
+<h1>Moduvela Blueprint Designer <small>MicroAI · v0.8 offline business discovery</small></h1>
 <p class="muted">Describe a fictional business. The tiny on-device interpreter suggests a data model and identifies questions. No GPU, model download, paid AI or network inference.</p>
 <label for="description"><strong>What should your business application do?</strong></label>
 <textarea id="description" maxlength="5000">I run a small drone-repair workshop. We log repair jobs, track spare parts, record customer drop-offs, and issue completion certificates. I also want a workflow step where high-value repairs require manager approval.</textarea>
@@ -38,10 +38,13 @@ code{font-family:ui-monospace,monospace}#status{min-height:1.5rem}
 
 <section id="design" hidden>
  <h2>1. Review business sections</h2>
+ <p class="muted fine">Basic discovery uses a small, offline cross-industry catalogue plus the trained classifier. The catalogue is deterministic, not a pretrained model.</p>
+ <ul id="catalog-explanations"></ul>
  <p class="muted fine">Select which record sections belong in the proposed application. Every selection remains a draft until separately approved inside Moduvela.</p>
  <label for="app-name">Application name</label><input id="app-name" maxlength="70" aria-label="Application name">
  <div id="entity-options" class="grid"></div>
- <p><button id="add-section" class="secondary" type="button">+ Add my own section</button></p>
+ <p><button id="start-manually" type="button" class="secondary" hidden>Start a blank blueprint</button>
+ <button id="add-section" class="secondary" type="button">+ Add my own section</button></p>
  <h2>2. Suggested extra fields — review carefully</h2><ul id="extra-fields"></ul>
  <h2>3. Possible relationships — not yet enforced</h2><ul id="relationships"></ul>
  <h2>4. Workflows / features not yet implemented</h2><ul id="unsupported"></ul>
