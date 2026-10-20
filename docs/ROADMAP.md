@@ -51,3 +51,7 @@ Free users do not receive operator-funded LLM calls. A demo stays no-AI. Optiona
 ## MicroAI v0.6 checkpoint
 
 A trained second-generation compact browser classifier with 16 KiB of weights is integrated. It outperforms v1 on synthetic tests but still underperforms the deterministic rules on the main held-out synthetic set. It supplies optional model-only suggestions that users can add to unapproved drafts manually. Next quality gate: *independent real-world annotation* and resource measurements on low-end devices. See [v0.6 report](MICROAI-V06-REPORT.md).
+
+## v0.7 adaptive browser AI milestone
+
+Available in the experimental local designer: default 16 KiB quantised classifier, optional 23 MB CPU semantic embeddings, ~45 MB GPU semantic embeddings, and explicit WebGPU 0.5B/1.5B generative model choices (~483 MB/~1.22 GB weights). Adds a 24-entity catalogue, strict parser and review-only generative schema/relationship/stage proposals, browser capability guidance and fallback. **The optional remote model downloads and actual on-device inference have not been hardware tested and are not production ready.** See [v0.7 report](MICROAI-V07-REPORT.md).

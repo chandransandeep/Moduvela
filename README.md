@@ -107,3 +107,7 @@ The new **genuinely trained compact model**, fully synthetic labelled corpus, an
 ## MicroAI v0.6 — improved supervised browser model
 
 A newly trained **16 KiB quantised-weight v2 classifier** improves over the previous 8 KiB v1 on synthetic validation, held-out and project-authored challenge tests. It still trails the deterministic business-term interpreter on the larger synthetic held-out test, so it remains a **second opinion** in the Blueprint Designer. When it notices a possible missing entity, you can explicitly add that entity to the editable application draft; it is never applied automatically. See [the v0.6 research report](docs/MICROAI-V06-REPORT.md). No paid AI, GPU or inference server is involved.
+
+## MicroAI v0.7 — optional model tiers for different browsers
+
+Our tiny deterministic/business classifier remains the default. Optional **local semantic matching** uses a pretrained MiniLM browser model and expands the proposed data-section catalogue to 24 types. On suitable WebGPU machines, optional pretrained Qwen 0.5B and 1.5B models can generate custom data-section drafts and inert relationship/stage suggestions. Nothing is automatically saved or executed. The optional pretrained models require large **first-use external downloads** and browser hardware support, which CI cannot verify; model prompts are intended to be processed locally, not through hosted inference APIs. See [v0.7 report and resource requirements](docs/MICROAI-V07-REPORT.md). This is still a fictional-data-only research prototype.

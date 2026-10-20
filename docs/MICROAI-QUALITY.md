@@ -69,3 +69,7 @@ A small, explicit attribute extractor now proposes fields such as serial numbers
 ## v0.6 trained-model second opinion
 
 The enhanced supervised quantised model uses 16 KiB of weights and scores full and clause-level requirements. The deterministic interpreter still controls initial Blueprint drafts; model-only suggestions can be included **only by an explicit UI action** and remain editable/inactive until owner approval. See [v0.6 scores and limitations](MICROAI-V06-REPORT.md). Do not interpret numeric model scores as probabilities or assume the synthetic training corpus represents real-world businesses.
+
+## v0.7: hardware-adaptive optional browser intelligence
+
+Optional semantic (MiniLM) and generative (Qwen 0.5B/1.5B) pretrained on-device models are exposed behind explicit download buttons. The baseline offline rules and compact trained classifier remain independent. The optional tiers have **mocked unit tests only** for their model-runtime adapters: real first-run downloads, latency and user-device compatibility are not yet verified. See [v0.7 engineering report](MICROAI-V07-REPORT.md).
