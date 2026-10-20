@@ -1,6 +1,7 @@
 import { proposeBusinessPlan, reviewedBlueprint } from "./planner.mjs";
 import { modelInformation } from "./engine.mjs";
 import {predictCompact,compactInfo} from "./trained.mjs";
+import {predictCompactV2,compactV2Info} from "./trained_v2.mjs";
 import {beginReview,editSection,addSection,removeSection,compileReviewedBlueprint} from "./review.mjs";
 const byId=id=>document.getElementById(id);
 const input=byId("description");
@@ -107,14 +108,15 @@ function describe() {
       ? "Import saves this as an UNAPPROVED draft. You will review and activate it separately."
       : "To import directly, open this designer inside the running Moduvela application at http://127.0.0.1:8765/microai/. Standalone preview supports JSON download.";
     const trained=predictCompact(input.value);
-    const suggested=trained.filter(x=>x.suggested).map(x=>x.name);
+    const trainedV2=predictCompactV2(input.value);
+    const suggested=trainedV2.filter(x=>x.suggested).map(x=>x.name);
     const deterministic=plan.entities.map(x=>x.name);
     const comparison=byId("trained-model");
-    comparison.textContent="Compact trained model suggests: "+(suggested.join(", ")||"none")+". " +
+    comparison.textContent="MicroAI trained model v2 suggests: "+(suggested.join(", ")||"none")+". " +
       "Rule engine suggests: "+(deterministic.join(", ")||"none")+". "+
-      "This is a separate, unverified second opinion. It does not add or activate anything.";
+      "This is an advisory second opinion trained on synthetic examples. It cannot change the application automatically.";
     byId("diagnostics").textContent=JSON.stringify({
-      engine:modelInformation(),compactModel:compactInfo(),trainedScores:trained,matched:plan.classifier.matches,
+      engine:modelInformation(),compactModel:compactInfo(),compactV2:compactV2Info(),trainedV1Scores:trained,trainedV2Scores:trainedV2,matched:plan.classifier.matches,
       exclusions:plan.excluded,notes:plan.notes
     },null,2);
     refreshPreview();
