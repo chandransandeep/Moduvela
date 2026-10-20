@@ -82,3 +82,19 @@ export function compileReviewedBlueprint(plan,review){
     ]
   };
 }
+
+/** Explicit human action only; caller supplies a catalog-backed schema candidate. */
+export function includeSuggestedSection(review, schema){
+  if(!schema||typeof schema.name!=="string"||!Array.isArray(schema.fields))
+    throw Error("Invalid suggested section");
+  if(!ENTITY.test(schema.name)||schema.fields.length<1||schema.fields.length>20)
+    throw Error("Invalid suggested schema");
+  if(schema.fields.some(f=>typeof f!=="string"||!FIELD.test(f)||RESERVED.has(f)))
+    throw Error("Invalid suggested fields");
+  if(review.sections.some(s=>s.name.toLowerCase()===schema.name.toLowerCase()))
+    throw Error("Section already included");
+  let next=addSection(review);
+  const section=next.sections.at(-1);
+  next=editSection(next,section.key,{name:schema.name,fields:schema.fields.join(", ")});
+  return next;
+}

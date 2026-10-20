@@ -1,8 +1,8 @@
 import { proposeBusinessPlan, reviewedBlueprint } from "./planner.mjs";
-import { modelInformation } from "./engine.mjs";
+import { modelInformation,builtinSchemaForEntity } from "./engine.mjs";
 import {predictCompact,compactInfo} from "./trained.mjs";
 import {predictCompactV2,compactV2Info} from "./trained_v2.mjs";
-import {beginReview,editSection,addSection,removeSection,compileReviewedBlueprint} from "./review.mjs";
+import {beginReview,editSection,addSection,removeSection,compileReviewedBlueprint,includeSuggestedSection} from "./review.mjs";
 const byId=id=>document.getElementById(id);
 const input=byId("description");
 let plan=null;
@@ -115,6 +115,30 @@ function describe() {
     comparison.textContent="MicroAI trained model v2 suggests: "+(suggested.join(", ")||"none")+". " +
       "Rule engine suggests: "+(deterministic.join(", ")||"none")+". "+
       "This is an advisory second opinion trained on synthetic examples. It cannot change the application automatically.";
+    const modelAdditions=byId("model-additions");clear(modelAdditions);
+    const omitted=suggested.filter(name=>!deterministic.includes(name));
+    for(const name of omitted){
+      const li=document.createElement("li");
+      const excluded=plan.excluded.some(x=>x.name===name);
+      const schema=builtinSchemaForEntity(name);
+      if(excluded){
+        li.textContent=name+": not offered, because you explicitly excluded it in your description.";
+      }else if(schema&&review){
+        const button=document.createElement("button");button.className="secondary";
+        button.type="button";button.textContent="Add "+name+" to draft";
+        button.addEventListener("click",()=>{
+          try{
+            review=includeSuggestedSection(review,schema);
+            renderEditor();refreshPreview();
+            button.disabled=true;
+            byId("status").textContent="Added "+name+" as an editable draft section. Review all fields before saving.";
+          }catch(error){byId("status").textContent=error.message;}
+        });
+        li.append(document.createTextNode("Possible missing section: "+name+". "),button);
+      }else li.textContent=name+": review this suggestion manually.";
+      modelAdditions.append(li);
+    }
+    if(!omitted.length)line(modelAdditions,"The trained model found no additional supported sections.");
     byId("diagnostics").textContent=JSON.stringify({
       engine:modelInformation(),compactModel:compactInfo(),compactV2:compactV2Info(),trainedV1Scores:trained,trainedV2Scores:trainedV2,matched:plan.classifier.matches,
       exclusions:plan.excluded,notes:plan.notes

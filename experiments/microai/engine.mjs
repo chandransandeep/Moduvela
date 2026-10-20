@@ -283,3 +283,9 @@ export function modelInformation() {
     usesModelApi: false,
   };
 }
+
+/** Schema candidates come from the local, reviewed catalog, not model-generated code. */
+export function builtinSchemaForEntity(name){
+  const item=Object.values(LABELS).find(x=>x.entity===name);
+  return item?{name:item.entity,fields:[...item.fields]}:null;
+}

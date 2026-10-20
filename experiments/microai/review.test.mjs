@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {proposeBusinessPlan} from "./planner.mjs";
-import {beginReview,editSection,addSection,removeSection,compileReviewedBlueprint} from "./review.mjs";
+import {beginReview,editSection,addSection,removeSection,compileReviewedBlueprint,includeSuggestedSection} from "./review.mjs";
+import {builtinSchemaForEntity} from "./engine.mjs";
 
 const PLAN=proposeBusinessPlan("I run a drone repair workshop. We track customers, parts and repair jobs, issue completion certificates, and require manager approval for high-value work.");
 const start=()=>beginReview(PLAN);
@@ -49,4 +50,19 @@ test("no approval logic can cross the review boundary",()=>{
  const b=compileReviewedBlueprint(PLAN,start());
  assert.equal(b.status,"proposal");
  assert.deepEqual(Object.keys(b).sort(),["category","description","entities","limitations","name","status","version"].sort());
+});
+
+test("trained-model-only category requires explicit owner inclusion",()=>{
+ const original=start();
+ const schema=builtinSchemaForEntity("Appointments");
+ assert.deepEqual(schema.name,"Appointments");
+ const next=includeSuggestedSection(original,schema);
+ assert.ok(!original.sections.some(s=>s.name==="Appointments"));
+ assert.ok(compileReviewedBlueprint(PLAN,next).entities.some(e=>e.name==="Appointments"));
+ assert.throws(()=>includeSuggestedSection(next,schema),/already included/);
+ assert.equal(compileReviewedBlueprint(PLAN,next).workflows,undefined);
+});
+test("reject arbitrary suggested schema and unknown catalog category",()=>{
+ assert.equal(builtinSchemaForEntity("Unknown"),null);
+ assert.throws(()=>includeSuggestedSection(start(),{name:"Unsafe",fields:["<script>"]}));
 });
