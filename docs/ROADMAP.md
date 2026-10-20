@@ -47,3 +47,7 @@ Free users do not receive operator-funded LLM calls. A demo stays no-AI. Optiona
 - Synthetic labelled corpus (720 cases) + 24 independent project-authored challenges and 36 manually written design cards; NOT external independent annotation.
 - Stateful deterministic workflows (draft/activate/transition) and explicit record links (draft/activate/reference validation) now implemented locally.
 - **Not implemented:** role-based approvals, typed numeric/currency fields, cross-device sync, database migrations, secure multi-user permissions, real certificate issuance. No real business data.
+
+## MicroAI v0.6 checkpoint
+
+A trained second-generation compact browser classifier with 16 KiB of weights is integrated. It outperforms v1 on synthetic tests but still underperforms the deterministic rules on the main held-out synthetic set. It supplies optional model-only suggestions that users can add to unapproved drafts manually. Next quality gate: *independent real-world annotation* and resource measurements on low-end devices. See [v0.6 report](MICROAI-V06-REPORT.md).

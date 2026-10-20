@@ -45,6 +45,10 @@ class DraftImportBrowserTests(unittest.TestCase):
                 token=re.search(r'id="csrf" value="([^"]+)"',page).group(1)
                 script=urlopen(base+"/microai/planner.mjs").read().decode()
                 self.assertIn("proposeBusinessPlan",script)
+                v2_model=urlopen(base+"/microai/trained_v2.mjs").read().decode()
+                self.assertIn("predictCompactV2", v2_model)
+                weights=urlopen(base+"/microai/training/model.v2.generated.mjs").read().decode()
+                self.assertIn("MODEL_V2", weights)
                 review=urlopen(base+"/microai/review.mjs").read().decode()
                 self.assertIn("compileReviewedBlueprint", review)
                 payload={

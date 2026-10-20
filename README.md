@@ -103,3 +103,7 @@ A separate local deterministic runtime now supports explicitly activated **state
 ## MicroAI v0.5 research checkpoint
 
 The new **genuinely trained compact model**, fully synthetic labelled corpus, annotated design-case fixtures, local state-machine workflow engine and manually activated record-link engine are integrated. The trained model is currently **less accurate than our deterministic interpreter on the synthetic evaluation** and is shown only as an advisory second opinion. See [the full reproducible v0.5 report](docs/MICROAI-V05-REPORT.md). The prototype is not appropriate for real business data, role-based approvals, or hosted multi-user access.
+
+## MicroAI v0.6 — improved supervised browser model
+
+A newly trained **16 KiB quantised-weight v2 classifier** improves over the previous 8 KiB v1 on synthetic validation, held-out and project-authored challenge tests. It still trails the deterministic business-term interpreter on the larger synthetic held-out test, so it remains a **second opinion** in the Blueprint Designer. When it notices a possible missing entity, you can explicitly add that entity to the editable application draft; it is never applied automatically. See [the v0.6 research report](docs/MICROAI-V06-REPORT.md). No paid AI, GPU or inference server is involved.

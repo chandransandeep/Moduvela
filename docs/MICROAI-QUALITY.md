@@ -65,3 +65,7 @@ The Blueprint Designer now permits renaming suggested sections, editing fields, 
 ## Local schema field hints
 
 A small, explicit attribute extractor now proposes fields such as serial numbers, warranty dates, repair costs, email addresses and certificate expiry. It requires supporting text and asks a question rather than choosing arbitrarily when several sections could own the field. Each hint remains editable, must pass Blueprint v1 validation and never generates executable code. This remains a rule-based component, not trained natural-language understanding.
+
+## v0.6 trained-model second opinion
+
+The enhanced supervised quantised model uses 16 KiB of weights and scores full and clause-level requirements. The deterministic interpreter still controls initial Blueprint drafts; model-only suggestions can be included **only by an explicit UI action** and remain editable/inactive until owner approval. See [v0.6 scores and limitations](MICROAI-V06-REPORT.md). Do not interpret numeric model scores as probabilities or assume the synthetic training corpus represents real-world businesses.
