@@ -43,6 +43,39 @@ export function parseLocalProposal(output){
  }
  return result;
 }
+/**
+ * Inert relationship and state suggestions. The executable workflow engine
+ * never receives these structures. The app must configure those separately.
+ */
+export function parseLocalDesign(output){
+ const entities=parseLocalProposal(output);
+ const cleaned=output.trim().replace(/^`{3}(?:json)?\s*/i,"").replace(/\s*`{3}$/,"");
+ const raw=JSON.parse(cleaned.slice(cleaned.indexOf("{"),cleaned.lastIndexOf("}")+1));
+ const byName=new Map(entities.map(e=>[e.name,e]));
+ const relationships=[];
+ const linkRows=Array.isArray(raw.relationships)?raw.relationships.slice(0,24):[];
+ for(const link of linkRows){
+  if(!link||typeof link!=="object")continue;
+  const {source,target,field}=link;
+  const from=byName.get(source);
+  if(!from||!byName.has(target)||source===target||!from.fields.includes(field))continue;
+  if(relationships.some(x=>x.source===source&&x.target===target&&x.field===field))continue;
+  relationships.push({source,target,field,implemented:false,status:"suggestion_only"});
+ }
+ const lifecycles=[];
+ const flowRows=Array.isArray(raw.lifecycles)?raw.lifecycles.slice(0,12):[];
+ for(const flow of flowRows){
+  if(!flow||!byName.has(flow.entity)||!Array.isArray(flow.stages))continue;
+  if(flow.stages.length<2||flow.stages.length>12)continue;
+  const states=flow.stages;
+  if(states.some(x=>typeof x!=="string"||!FIELD.test(x)||RESERVED.has(x)))continue;
+  if(new Set(states).size!==states.length)continue;
+  lifecycles.push({entity:flow.entity,states:[...states],
+    implemented:false,status:"suggestion_only"});
+ }
+ return {entities,relationships,lifecycles};
+}
+
 function readResponse(response){
  const message=response?.[0]?.generated_text;
  if(Array.isArray(message)){
@@ -71,7 +104,10 @@ export async function loadLocalGenerator({pipelineFactory,modelSize="small"}={})
       "Design editable record sections for a fictional small business. "+
       "Return ONLY a JSON object with an 'entities' array of at most 8 items. "+
       "Each entity has 'name' (PascalCase identifier) and 'fields' (lowercase_underscore identifiers, max 12). "+
-      "No executable code, workflows, roles, permissions, accounts, passwords, or URLs. "+
+      "Optionally include 'relationships' array of {source,target,field} using named entities and valid source fields, "+
+      "and 'lifecycles' array of {entity,stages} containing lowercase state names. "+
+      "These are DESIGN suggestions only, not instructions to execute. "+
+      "Never output executable code, guards, roles, permissions, accounts, passwords, or URLs. "+
       "Use {'entities':[]} if uncertain, but output valid JSON with double quotes."},
     {role:"user",content:description}
    ];
@@ -80,7 +116,7 @@ export async function loadLocalGenerator({pipelineFactory,modelSize="small"}={})
      do_sample:false,
      return_full_text:false
    });
-   return {entities:parseLocalProposal(readResponse(response)),
+   return {...parseLocalDesign(readResponse(response)),
     notice:"Unverified suggestions produced in this browser; accept manually only."};
   },
   dispose(){try{generator.dispose?.();}catch{}}

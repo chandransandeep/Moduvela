@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import {parseLocalProposal,loadLocalGenerator,DEEP_MODEL,DEEP_LIMITS} from "./generative.mjs";
+import {parseLocalProposal,parseLocalDesign,loadLocalGenerator,DEEP_MODEL,DEEP_LIMITS} from "./generative.mjs";
 test("valid fields survive; executable workflow and permissions metadata discarded",()=>{
  const result=parseLocalProposal(JSON.stringify({
   entities:[{name:"Drones",fields:["serial_number","model"],workflow:{exec:"evil()"}}],
@@ -55,4 +55,32 @@ test("larger local model tier requires explicit selection",async()=>{
  assert.ok(selected.includes("1.5B-Instruct"));
  assert.deepEqual((await local.propose("Fictional repair and inspection business.")).entities,[]);
  await assert.rejects(()=>loadLocalGenerator({modelSize:"unrecognised",pipelineFactory:()=>{}}));
+});
+
+test("inert relationships and lifecycles must refer to approved suggestions",()=>{
+ const proposal=parseLocalDesign(JSON.stringify({
+  entities:[
+    {name:"Customers",fields:["name","phone"]},
+    {name:"Jobs",fields:["customer","status","description"]}
+  ],
+  relationships:[
+    {source:"Jobs",target:"Customers",field:"customer"},
+    {source:"Jobs",target:"Unknown",field:"customer",script:"bad"},
+    {source:"Jobs",target:"Customers",field:"created_at"}
+  ],
+  lifecycles:[
+    {entity:"Jobs",stages:["new","in_progress","completed"],executor:"eval"},
+    {entity:"Customers",stages:["__proto__","done"]},
+    {entity:"Outside",stages:["new","done"]}
+  ],
+  roles:[{admin:true}],permissions:{"*":true}
+ }));
+ assert.equal(proposal.entities.length,2);
+ assert.deepEqual(proposal.relationships,[{
+  source:"Jobs",target:"Customers",field:"customer",implemented:false,status:"suggestion_only"
+ }]);
+ assert.deepEqual(proposal.lifecycles,[{
+  entity:"Jobs",states:["new","in_progress","completed"],implemented:false,status:"suggestion_only"
+ }]);
+ assert.equal(proposal.permissions,undefined);
 });

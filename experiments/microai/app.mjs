@@ -278,6 +278,14 @@ async function runDeep(){
    return;
   }
   const list=byId("deep-results");clear(list);
+  const designs=byId("deep-designs");clear(designs);
+  for(const link of output.relationships||[]){
+   line(designs,"Possible link: "+link.source+"."+link.field+" → "+link.target+" (INERT; configure manually)");
+  }
+  for(const flow of output.lifecycles||[]){
+   line(designs,"Possible stages for "+flow.entity+": "+flow.states.join(" → ")+" (INERT; configure manually)");
+  }
+  if(!designs.children.length)line(designs,"No validated relationship or stage suggestions.");
   if(!plan?.blueprint&&output.entities.length){
    plan={...plan,blueprint:{
      version:1,name:"Custom Business Operations",category:"custom",
