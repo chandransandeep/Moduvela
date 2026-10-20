@@ -3,6 +3,7 @@
  * deterministic baseline on held-out cases without unsafe false positives.
  */
 import {LABELS,CORPUS,TRAIN_PHRASES,TRAIN_DOMAINS} from "../training/dataset.mjs";
+import {readFileSync,writeFileSync} from "node:fs";
 import {predictCompact} from "../trained.mjs";
 import {proposeBusinessPlan} from "../planner.mjs";
 const DIMS=2048, EPOCHS=14, SEED=42657;
@@ -162,6 +163,14 @@ const bundle={
  training:"Synthetic augmentation from training split only; validation-tuned per-label thresholds; not real-world validated"
 };
 const source='/** Reproducible synthetic v2 trained model. */\nexport const MODEL_V2 = '+JSON.stringify(bundle)+';\n';
+const modelPath=new URL("../training/model.v2.generated.mjs",import.meta.url);
+if(process.argv.includes("--check")){
+ if(readFileSync(modelPath,"utf8")!==source){
+  console.error("Reproducibility check failed: training produced a different v2 model");
+  process.exitCode=1;
+ }else console.log("Reproducible MicroAI v2 model verified");
+}
+if(process.argv.includes("--write"))writeFileSync(modelPath,source);
 if(process.argv.includes("--emit-model")){
  // Public, non-sensitive model artifact; capture from CI for later explicit review.
  console.log("V2_MODEL_BASE64_BEGIN");
