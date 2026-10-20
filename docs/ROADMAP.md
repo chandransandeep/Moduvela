@@ -55,3 +55,7 @@ A trained second-generation compact browser classifier with 16 KiB of weights is
 ## v0.7 adaptive browser AI milestone
 
 Available in the experimental local designer: default 16 KiB quantised classifier, optional 23 MB CPU semantic embeddings, ~45 MB GPU semantic embeddings, and explicit WebGPU 0.5B/1.5B generative model choices (~483 MB/~1.22 GB weights). Adds a 24-entity catalogue, strict parser and review-only generative schema/relationship/stage proposals, browser capability guidance and fallback. **The optional remote model downloads and actual on-device inference have not been hardware tested and are not production ready.** See [v0.7 report](MICROAI-V07-REPORT.md).
+
+## v0.8 offline domain composer
+
+Mixed-industry requirements now get a lightweight catalog-based first draft even if the original eight-label trained classifier returns nothing. Added explicit-vs-inferred design evidence, cross-domain relationship questions and a manual-start fallback; no extra model download or paid API calls. All candidate business rules remain non-executable. See [v0.8 report](MICROAI-V08-REPORT.md).

@@ -73,3 +73,7 @@ The enhanced supervised quantised model uses 16 KiB of weights and scores full a
 ## v0.7: hardware-adaptive optional browser intelligence
 
 Optional semantic (MiniLM) and generative (Qwen 0.5B/1.5B) pretrained on-device models are exposed behind explicit download buttons. The baseline offline rules and compact trained classifier remain independent. The optional tiers have **mocked unit tests only** for their model-runtime adapters: real first-run downloads, latency and user-device compatibility are not yet verified. See [v0.7 engineering report](MICROAI-V07-REPORT.md).
+
+## v0.8: no-download fallback for unfamiliar businesses
+
+The ordinary browser now has a wider reviewed domain catalogue and a rule-based composer. This fixes the blank-result case for the micro-farm subscription and same-day delivery example and resets a stale title from the previous business. The inferred sections are explicitly marked for human confirmation, not model-derived probabilities. The additional classifier logic is **deterministic and hand-authored**, not an independently trained semantic model. See [v0.8 report](MICROAI-V08-REPORT.md).
