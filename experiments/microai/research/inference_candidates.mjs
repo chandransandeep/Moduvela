@@ -10,9 +10,15 @@ function chunks(text){
    .map(x=>x.trim()).filter(x=>x.length>=12).slice(0,40);
  return [...new Set([...parts,text])];
 }
+const cache=new Map();
 function raw(text, mode){
+ const key=mode+"|"+text;
+ if(cache.has(key))return cache.get(key);
  const all=chunks(text);
- if(mode==="whole")return Object.fromEntries(predictCompact(text,0).map(x=>[x.name,x.score]));
+ if(mode==="whole"){
+  const out=Object.fromEntries(predictCompact(text,0).map(x=>[x.name,x.score]));
+  cache.set(key,out);return out;
+ }
  const scores=Object.fromEntries(LABELS.map(x=>[x,0]));
  for(const section of all){
   for(const x of predictCompact(section,0)){
@@ -23,6 +29,7 @@ function raw(text, mode){
   const full=Object.fromEntries(predictCompact(text,0).map(x=>[x.name,x.score]));
   for(const label of LABELS)scores[label]=.65*scores[label]+.35*full[label];
  }
+ cache.set(key,scores);
  return scores;
 }
 function stats(cases, select){
