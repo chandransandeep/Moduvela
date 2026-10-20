@@ -60,6 +60,7 @@ code{font-family:ui-monospace,monospace}#status{min-height:1.5rem}
 <p class="muted fine">Model-only suggestions are <strong>never added automatically</strong>. You may choose to add one for editing and separate approval.</p>
 <ul id="model-additions"></ul>
 <h2>Optional enhanced semantic model (CPU or WebGPU)</h2>
+<p id="browser-capabilities" class="muted fine" role="status">Checking local browser hardware capabilities without downloading any AI model…</p>
 <p class="muted fine">Optional local sentence-embedding model. Only loads if you click below. First use downloads a third-party open model and JavaScript runtime (about 23 MB CPU weights, or about 45 MB GPU weights, plus other assets). Your IP/request metadata can reach model/CDN hosts, but requirement text is used for browser inference rather than submitted to an AI API. Offline reuse depends on browser caching.</p>
 <label for="semantic-device">Inference mode</label>
 <select id="semantic-device"><option value="wasm">CPU / WebAssembly (recommended, ~23 MB weights)</option><option value="webgpu">WebGPU / fp16 (faster if supported, ~45 MB weights)</option></select>

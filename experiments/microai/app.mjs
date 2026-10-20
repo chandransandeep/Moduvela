@@ -5,6 +5,7 @@ import {predictCompactV2,compactV2Info} from "./trained_v2.mjs";
 import {loadLocalSemantic,SEMANTIC_OPTIONS} from "./semantic.mjs";
 import {schemaFor} from "./semantic_catalog.mjs";
 import {loadLocalGenerator,DEEP_MODELS} from "./generative.mjs";
+import {detectHardware} from "./capabilities.mjs";
 import {beginReview,editSection,addSection,removeSection,compileReviewedBlueprint,includeSuggestedSection} from "./review.mjs";
 const byId=id=>document.getElementById(id);
 const input=byId("description");
@@ -341,3 +342,10 @@ byId("add-section").addEventListener("click",()=>{
 byId("download").addEventListener("click",download);
 byId("save").addEventListener("click",save);
 describe();
+void detectHardware().then(info=>{
+ byId("browser-capabilities").textContent=(info.webgpuAdapterFound?"WebGPU detected. ":"No WebGPU adapter detected. ")+
+   (info.approxDeviceRAMGB?"Browser-reported device memory: "+info.approxDeviceRAMGB+" GB (approximate/capped). ":"Device RAM not reported. ")+
+   (info.cpuThreads?"Logical CPUs: "+info.cpuThreads+". ":"")+
+   "GPU memory and large-model compatibility cannot be reliably inferred.";
+ if(!info.webgpuAdapterFound)byId("deep-run").disabled=true;
+}).catch(()=>{});
