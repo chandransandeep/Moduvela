@@ -5,6 +5,10 @@
  */
 import {SEMANTIC_LIBRARY_URL} from "./semantic.mjs";
 export const DEEP_MODEL="onnx-community/Qwen2.5-0.5B-Instruct";
+export const DEEP_MODELS=Object.freeze({
+ "small":{id:DEEP_MODEL,weightsMB:483,description:"0.5B instruct · experimental"},
+ "large":{id:"onnx-community/Qwen2.5-1.5B-Instruct",weightsMB:1220,description:"1.5B instruct · very demanding"}
+});
 const IDENT=/^[A-Za-z][A-Za-z0-9_]{0,39}$/;
 const FIELD=/^[a-z][a-z0-9_]{0,39}$/;
 const RESERVED=new Set(["id","created_at","updated_at","__proto__","constructor"]);
@@ -50,10 +54,14 @@ function readResponse(response){
  if(typeof message==="string")return message;
  throw Error("Unexpected generation output");
 }
-export async function loadLocalGenerator({pipelineFactory}={}){
+export async function loadLocalGenerator({pipelineFactory,modelSize="small"}={}){
+ if(!Object.hasOwn(DEEP_MODELS,modelSize))throw Error("Unknown local model tier");
+ const selected=DEEP_MODELS[modelSize];
  const pipeline=pipelineFactory ?? (await import(SEMANTIC_LIBRARY_URL)).pipeline;
- const generator=await pipeline("text-generation",DEEP_MODEL,{device:"webgpu",dtype:"q4f16"});
+ const generator=await pipeline("text-generation",selected.id,{device:"webgpu",dtype:"q4f16"});
  return {
+  model:selected.id,
+  modelSize,
   async propose(description){
    if(typeof description!=="string"||description.length<12||
       description.length>DEEP_LIMITS.maxInputCharacters)

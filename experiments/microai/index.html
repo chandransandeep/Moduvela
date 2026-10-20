@@ -68,8 +68,10 @@ code{font-family:ui-monospace,monospace}#status{min-height:1.5rem}
 <p class="muted fine">Similarity ranking is experimental and is not a confidence percentage or a validation of your business requirements. It cannot execute workflows or create records.</p>
 <ul id="semantic-suggestions"></ul>
 <h2>Experimental deep local generation — powerful WebGPU computers only</h2>
-<p class="muted fine">Advanced opt-in feature: a small 0.5B-parameter language model running locally with WebGPU. Its q4f16 files can require roughly <strong>483 MB of model weights</strong>, additional runtime downloads, and significant browser/GPU memory. Initial use requires internet. This is <strong>not necessary</strong> for the standard product and has not been browser-hardware verified in CI.</p>
-<button type="button" class="secondary" id="deep-run">Download & run local generative model (~0.5 GB)</button>
+<p class="muted fine">Advanced opt-in feature: a small 0.5B-parameter language model running locally with WebGPU. Its q4f16 files can require roughly <strong>483 MB of model weights</strong>, additional runtime downloads, and significant browser/GPU memory. Initial use requires internet. A larger experimental 1.5B option downloads approximately <strong>1.22 GB of weights</strong> and needs considerably more GPU memory. This is <strong>not necessary</strong> for the standard product and has not been browser-hardware verified in CI.</p>
+<label for="deep-model-tier">Choose the optional local generative model</label>
+<select id="deep-model-tier"><option value="small">0.5B model — approximately 483 MB of weights</option><option value="large">1.5B model — approximately 1.22 GB of weights (high-end GPUs only)</option></select>
+<button type="button" class="secondary" id="deep-run">Load & run selected local model</button>
 <p id="deep-status" role="status" class="muted fine">Not loaded. No external model downloads unless you explicitly choose this option.</p>
 <ul id="deep-results"></ul>
 <p class="muted fine">Treat every generated field as untrusted. No proposed section is saved or activated until you choose to include it and approve the final draft. Generated roles, code and workflows are discarded.</p>

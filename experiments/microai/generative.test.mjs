@@ -42,3 +42,17 @@ test("mock local model is loaded on request and no remote tests needed",async()=
  await assert.rejects(()=>engine.propose("x".repeat(2001)));
  engine.dispose();
 });
+
+test("larger local model tier requires explicit selection",async()=>{
+ let selected=null;
+ const local=await loadLocalGenerator({modelSize:"large",
+   pipelineFactory:async(task,id,opts)=>{
+    selected=id;
+    assert.equal(opts.device,"webgpu");
+    return async()=>[{generated_text:[{role:"assistant",content:'{"entities":[]}'}]}];
+   }
+ });
+ assert.ok(selected.includes("1.5B-Instruct"));
+ assert.deepEqual((await local.propose("Fictional repair and inspection business.")).entities,[]);
+ await assert.rejects(()=>loadLocalGenerator({modelSize:"unrecognised",pipelineFactory:()=>{}}));
+});

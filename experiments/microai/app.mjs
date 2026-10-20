@@ -4,7 +4,7 @@ import {predictCompact,compactInfo} from "./trained.mjs";
 import {predictCompactV2,compactV2Info} from "./trained_v2.mjs";
 import {loadLocalSemantic,SEMANTIC_OPTIONS} from "./semantic.mjs";
 import {schemaFor} from "./semantic_catalog.mjs";
-import {loadLocalGenerator} from "./generative.mjs";
+import {loadLocalGenerator,DEEP_MODELS} from "./generative.mjs";
 import {beginReview,editSection,addSection,removeSection,compileReviewedBlueprint,includeSuggestedSection} from "./review.mjs";
 const byId=id=>document.getElementById(id);
 const input=byId("description");
@@ -13,6 +13,7 @@ let review=null;
 let semanticRuntime=null;
 let semanticDevice=null;
 let deepGenerator=null;
+let deepTier=null;
 
 function line(target,text) {
   const li=document.createElement("li");
@@ -251,19 +252,24 @@ byId("semantic-run").addEventListener("click",runEnhanced);
 async function runDeep(){
  const button=byId("deep-run"),status=byId("deep-status");
  const description=input.value;
+ const selectedTier=byId("deep-model-tier").value;
+ const tier=DEEP_MODELS[selectedTier];
+ if(!tier){status.textContent="Invalid model tier";return;}
  if(!navigator.gpu){
   status.textContent="WebGPU is unavailable. Standard and CPU semantic modes remain available.";
   return;
  }
- if(!window.confirm("This experimental WebGPU model can download ~0.5 GB of weights plus other assets, "+
+ if(!window.confirm("This experimental WebGPU model may download around "+tier.weightsMB+" MB of weights plus other assets, "+
    "use substantial GPU memory, and may fail or run slowly. "+
    "Model/runtime hosting can see download metadata but descriptions are inferred locally. Continue?"))return;
  button.disabled=true;
  const start=performance.now();
  try{
-  if(!deepGenerator){
-   status.textContent="Loading an optional local 0.5B language model. Large download; please wait…";
-   deepGenerator=await loadLocalGenerator();
+  if(!deepGenerator||deepTier!==selectedTier){
+   deepGenerator?.dispose?.();deepGenerator=null;
+   status.textContent="Loading local "+tier.description+". Download may be very large; please wait…";
+   deepGenerator=await loadLocalGenerator({modelSize:selectedTier});
+   deepTier=selectedTier;
   }
   status.textContent="Generating a candidate business data design on this device…";
   const output=await deepGenerator.propose(description);
