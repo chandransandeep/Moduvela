@@ -3,6 +3,11 @@
  * Semantic similarity never creates an application without explicit human review.
  */
 export const CATALOG = Object.freeze([
+ {name:"Farms",fields:["farm_name","location","contact","status"],examples:["connect local vertical farms and urban growers","register producers and farms supplying fresh food","record agricultural farms and producer contacts"]},
+ {name:"HarvestBatches",fields:["farm","product","harvest_date","quantity"],examples:["track today's harvest batches from farms","record produce harvest quantities and harvest dates","track harvested crops and lot origins"]},
+ {name:"Orders",fields:["customer","order_date","status","delivery_date"],examples:["accept customer orders for food deliveries","manage orders placed by shops and households","fulfil incoming orders for business customers"]},
+ {name:"DeliveryRoutes",fields:["route_name","delivery_date","driver","status"],examples:["plan delivery routes and driver schedules","organise last-mile routes for delivery stops","track courier routes and drop-off sequences"]},
+ {name:"FarmProducts",fields:["farm","product_name","unit","availability"],examples:["catalogue fresh vegetables and herbs grown locally","record farm-grown products by producer","list available crops sold by farms"]},
  {name:"Customers",fields:["name","phone","notes"],examples:["record customers, clients and contact details","manage members and contact profiles","keep a client directory"]},
  {name:"Jobs",fields:["customer","description","status","due_date"],examples:["track repair jobs and their progress","manage work orders and service tasks","create work tickets for technicians"]},
  {name:"Inventory",fields:["item_name","quantity","reorder_level"],examples:["track inventory and quantities in stock","manage spare parts and supplies","monitor available materials"]},
