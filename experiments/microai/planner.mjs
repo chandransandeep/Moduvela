@@ -6,6 +6,7 @@
  */
 import { analyseDescription, modelInformation } from "./engine.mjs";
 import {suggestFields} from "./fields.mjs";
+import {composeBusinessConcepts} from "./catalog_planner.mjs";
 
 const ENTITY_TERMS = Object.freeze({
   Customers: /\b(?:customer|client|member|patient|tenant)s?\b/i,
@@ -92,8 +93,13 @@ function relationshipCandidates(entities) {
  */
 export function proposeBusinessPlan(text) {
   const analysis = analyseDescription(text);
+  const catalog = composeBusinessConcepts(text);
   const initial = analysis.blueprint?.entities || [];
   const excluded = [];
+  const fromCatalog = new Map(catalog.entities.map(e=>[e.name,e]));
+  for(const label of catalog.excluded)excluded.push({
+    name:label,reason:"Explicit negative wording in requirements — confirm exclusion"
+  });
   let entities = initial.filter(e=>{
     if (explicitExclusion(text,e.name)) {
       excluded.push({ name:e.name, reason:"Explicit negative wording — review before exclusion" });
@@ -105,6 +111,21 @@ export function proposeBusinessPlan(text) {
     evidence: supportingEvidence(text,entity.name),
     reviewRequired: true,
   }));
+  // Complement the legacy eight-label classifier with the offline
+  // cross-domain catalog. Keep inferred evidence and require user review.
+  const found=new Set(entities.map(e=>e.name));
+  for(const candidate of catalog.entities){
+    if(found.has(candidate.name)||excluded.some(x=>x.name===candidate.name))continue;
+    entities.push(candidate);
+    found.add(candidate.name);
+  }
+  // For entities that the rules already know, prefer direct textual evidence.
+  for(const item of entities){
+    if(fromCatalog.has(item.name)&&!item.evidence?.length){
+      item.evidence=[...fromCatalog.get(item.name).evidence];
+    }
+  }
+  entities=entities.slice(0,12);
   const extracted=suggestFields(text,entities);
   entities=extracted.entities;
   const approval = approvalRequest(text);
@@ -118,8 +139,17 @@ export function proposeBusinessPlan(text) {
   if (entities.some(e=>e.name==="Certificates"))
     unsupported.push({kind:"certificate_generation",status:"suggestion_only",
       implemented:false, evidence:supportingEvidence(text,"Certificates")});
-  const relationships=relationshipCandidates(entities);
-  const questions=[...extracted.questions];
+  const allRelationships=[...relationshipCandidates(entities),...catalog.relationships];
+  const relationshipIds=new Set();
+  const relationships=allRelationships.filter(link=>{
+    const id=link.from+"\u0000"+link.to;
+    if(relationshipIds.has(id))return false;
+    relationshipIds.add(id);
+    return true;
+  });
+  for(const item of catalog.unsupported)
+    if(!unsupported.some(x=>x.kind===item.kind))unsupported.push(item);
+  const questions=[...extracted.questions,...catalog.questions];
   if(!entities.length)questions.push("What information should this application store? Give an example record.");
   if(approval && !approval.excluded){
     if(!approval.role)questions.push("Who is allowed to approve the request?");
@@ -133,20 +163,30 @@ export function proposeBusinessPlan(text) {
   if(entities.some(e=>e.name==="Inventory"))
     questions.push(TYPE_QUESTIONS.Inventory);
   if(excluded.length)questions.push("Confirm that excluded record sections are not needed.");
+  const initialBlueprint=analysis.blueprint||{
+    version:1,name:catalog.title,category:"custom",
+    description:text,status:"proposal",entities:[],
+    limitations:["Offline catalog-based suggestion; owner review required",
+      "Only text fields are supported in the current application engine"]
+  };
   const blueprint = entities.length
-    ? {...analysis.blueprint, entities: entities.map(({name,fields})=>({name,fields})),
+    ? {...initialBlueprint,
+        name:catalog.title!=="Custom Business Operations"?catalog.title:initialBlueprint.name,
+        entities: entities.map(({name,fields})=>({name,fields})),
         limitations: [
-          ...analysis.blueprint.limitations,
+          ...initialBlueprint.limitations,
           "Relations and conditions are suggestions only; nothing executes automatically.",
           "Owner must review and approve the draft.",
         ]}
     : null;
   return {
     version:1, text, blueprint, entities, excluded, relationships,
+    catalog:{direct:catalog.direct,inferred:catalog.inferred,notes:catalog.notes},
     fieldSuggestions:extracted.suggestions,
     unsupported, questions:questions.slice(0,6),
     notes:[
       "No external model, GPU, API token or network needed.",
+      "Deterministic catalog rules broaden domain coverage but do not constitute general natural-language understanding.",
       "This is a rule-assisted classifier; it can miss negation, intent and complex business logic.",
       "Scores are not calibrated accuracy or probability.",
       "No sensitive business data: local prototype has no login or production data security.",

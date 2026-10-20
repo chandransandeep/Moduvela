@@ -76,3 +76,26 @@ test("contextual field extraction extends draft but still needs review",()=>{
  assert.ok(jobs?.fields.includes("repair_cost"));
  assert.ok(p.fieldSuggestions.some(x=>x.field==="serial_number"&&x.reviewRequired));
 });
+
+test("micro-farm same-day subscription business becomes a reviewable blueprint",()=>{
+ const p=proposeBusinessPlan("A micro-logistics and subscription platform connecting urban vertical micro-farms with downtown coffee shops and residential households for same-day harvest delivery.");
+ assert.ok(p.blueprint,"should no longer return an empty proposal");
+ for(const section of ["Farms","Customers","HarvestBatches","Subscriptions","Deliveries","Orders"])
+   assert.ok(p.entities.some(x=>x.name===section),"missing "+section);
+ assert.equal(p.blueprint.name,"Urban Farm Delivery Platform");
+ assert.ok(p.catalog.inferred.includes("Orders"));
+ assert.ok(p.relationships.some(x=>x.from==="Orders"&&x.to==="Deliveries"&&!x.implemented));
+ assert.ok(p.questions.some(x=>x.includes("cut-off")));
+ assert.ok(p.unsupported.some(x=>x.kind==="same_day_delivery"&&x.implemented===false));
+ assert.ok(!p.blueprint.workflows);
+ const draft=reviewedBlueprint(p,["Customers","Subscriptions","Deliveries"]);
+ assert.deepEqual(draft.entities.map(x=>x.name),["Customers","Subscriptions","Deliveries"]);
+});
+test("unrelated story still yields no draft",()=>{
+ const p=proposeBusinessPlan("Bright stars reflect over the quiet mountain lake at sunset.");
+ assert.equal(p.blueprint,null);
+});
+test("no ordering is not overridden by inferred customer deliveries",()=>{
+ const p=proposeBusinessPlan("We connect farms with households for deliveries, with no orders managed by this software.");
+ assert.ok(!p.entities.some(x=>x.name==="Orders"));
+});
