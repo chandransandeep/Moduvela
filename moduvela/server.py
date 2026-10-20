@@ -97,7 +97,7 @@ class Handler(BaseHTTPRequestHandler):
 
     def serve_microai_asset(self, name):
         """Serve only explicitly allowlisted static demo assets, locally."""
-        allowed = {'index.html', 'app.mjs', 'planner.mjs', 'engine.mjs', 'review.mjs', 'fields.mjs', 'trained.mjs', 'training/model.generated.mjs', 'trained_v2.mjs', 'training/model.v2.generated.mjs'}
+        allowed = {'index.html', 'app.mjs', 'planner.mjs', 'engine.mjs', 'review.mjs', 'fields.mjs', 'trained.mjs', 'training/model.generated.mjs', 'trained_v2.mjs', 'training/model.v2.generated.mjs', 'semantic.mjs', 'semantic_catalog.mjs'}
         if name not in allowed:
             return self.send('Not found', 404)
         root = Path(__file__).resolve().parents[1] / 'experiments' / 'microai'
@@ -113,7 +113,10 @@ class Handler(BaseHTTPRequestHandler):
         self.send_header('Cache-Control', 'no-store')
         self.send_header('X-Content-Type-Options', 'nosniff')
         self.send_header('Content-Security-Policy',
-                         "default-src 'none'; script-src 'self'; "
+                         "default-src 'none'; script-src 'self' https://cdn.jsdelivr.net 'wasm-unsafe-eval'; "
+                         "connect-src 'self' https://cdn.jsdelivr.net https://huggingface.co "
+                         "https://*.huggingface.co https://*.hf.co https://*.xethub.hf.co; "
+                         "worker-src 'self' blob:; "
                          "style-src 'unsafe-inline'; form-action 'self'; "
                          "base-uri 'none'; frame-ancestors 'none'")
         self.end_headers()

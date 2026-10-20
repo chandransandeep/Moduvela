@@ -11,6 +11,7 @@ main{max-width:1030px;margin:2rem auto;padding:1.8rem;background:white;border-ra
 h1{margin-bottom:.3rem}h2{font-size:1.15rem;margin:1.4rem 0 .6rem}
 p{line-height:1.55}.muted{color:#516477}.fine{font-size:.85rem}
 textarea{width:100%;min-height:130px;resize:vertical;padding:1rem;font:inherit;border:1px solid #9aacc0;border-radius:9px}
+select{display:block;width:100%;padding:.6rem;margin:.4rem 0 1rem;border:1px solid #9aacc0;border-radius:7px;font:inherit}
 input:not([type="checkbox"]){width:100%;padding:.55rem;margin:.4rem 0;border:1px solid #9aacc0;border-radius:7px;font:inherit}
 button{border:0;background:#1559ad;color:white;border-radius:9px;padding:.7rem 1rem;cursor:pointer;font:inherit;margin:.3rem .5rem .3rem 0}
 button.secondary{background:#e5edf7;color:#17385e}button:disabled{opacity:.5;cursor:not-allowed}
@@ -58,6 +59,14 @@ code{font-family:ui-monospace,monospace}#status{min-height:1.5rem}
 <p id="trained-model" class="note">The compact model is advisory only. It cannot activate workflows or change your selected blueprint.</p>
 <p class="muted fine">Model-only suggestions are <strong>never added automatically</strong>. You may choose to add one for editing and separate approval.</p>
 <ul id="model-additions"></ul>
+<h2>Optional enhanced semantic model (CPU or WebGPU)</h2>
+<p class="muted fine">Optional local sentence-embedding model. Only loads if you click below. First use downloads a third-party open model and JavaScript runtime (about 23 MB CPU weights, or about 45 MB GPU weights, plus other assets). Your IP/request metadata can reach model/CDN hosts, but requirement text is used for browser inference rather than submitted to an AI API. Offline reuse depends on browser caching.</p>
+<label for="semantic-device">Inference mode</label>
+<select id="semantic-device"><option value="wasm">CPU / WebAssembly (recommended, ~23 MB weights)</option><option value="webgpu">WebGPU / fp16 (faster if supported, ~45 MB weights)</option></select>
+<button type="button" id="semantic-run" class="secondary">Download & run enhanced model locally</button>
+<p id="semantic-status" role="status" class="muted fine">Not loaded. Standard MicroAI works without downloading it.</p>
+<p class="muted fine">Similarity ranking is experimental and is not a confidence percentage or a validation of your business requirements. It cannot execute workflows or create records.</p>
+<ul id="semantic-suggestions"></ul>
 <h2>Diagnostic information</h2>
 <details><summary>Show interpreter diagnostics</summary><pre id="diagnostics"></pre></details>
 <p class="muted fine">This is a small rule-assisted classifier, not general-purpose AI. It may misinterpret requirements, particularly negation and complex exceptions. All suggestions need review.</p>

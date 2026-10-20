@@ -49,6 +49,10 @@ class DraftImportBrowserTests(unittest.TestCase):
                 self.assertIn("predictCompactV2", v2_model)
                 weights=urlopen(base+"/microai/training/model.v2.generated.mjs").read().decode()
                 self.assertIn("MODEL_V2", weights)
+                semantic=urlopen(base+"/microai/semantic.mjs").read().decode()
+                self.assertIn("loadLocalSemantic",semantic)
+                catalog=urlopen(base+"/microai/semantic_catalog.mjs").read().decode()
+                self.assertIn("CATALOG",catalog)
                 review=urlopen(base+"/microai/review.mjs").read().decode()
                 self.assertIn("compileReviewedBlueprint", review)
                 payload={

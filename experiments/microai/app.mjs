@@ -2,11 +2,15 @@ import { proposeBusinessPlan, reviewedBlueprint } from "./planner.mjs";
 import { modelInformation,builtinSchemaForEntity } from "./engine.mjs";
 import {predictCompact,compactInfo} from "./trained.mjs";
 import {predictCompactV2,compactV2Info} from "./trained_v2.mjs";
+import {loadLocalSemantic,SEMANTIC_OPTIONS} from "./semantic.mjs";
+import {schemaFor} from "./semantic_catalog.mjs";
 import {beginReview,editSection,addSection,removeSection,compileReviewedBlueprint,includeSuggestedSection} from "./review.mjs";
 const byId=id=>document.getElementById(id);
 const input=byId("description");
 let plan=null;
 let review=null;
+let semanticRuntime=null;
+let semanticDevice=null;
 
 function line(target,text) {
   const li=document.createElement("li");
@@ -171,6 +175,77 @@ function save(){
   }
   document.body.append(form);form.submit();
 }
+function renderSemantic(scores,originalDescription){
+ const list=byId("semantic-suggestions");clear(list);
+ const excluded=plan?.excluded?.map(x=>x.name)||[];
+ // Rank alone is not calibration; all suggestions require explicit opt-in.
+ for(const candidate of scores.slice(0,8)){
+  const item=document.createElement("li");
+  const score=document.createElement("span");
+  score.textContent=candidate.name+" — cosine similarity "+candidate.score.toFixed(3)+
+     " (not a probability). Matched: "+candidate.closestExample+". ";
+  item.append(score);
+  const explicitlyExcluded=excluded.includes(candidate.name)||
+   new RegExp("\\b(?:no|without|exclude|do not need|don't need)\\s+(?:any\\s+)?"+
+     candidate.name.toLowerCase()+"\\b","i").test(originalDescription);
+  const already=review?.sections?.some(x=>x.name===candidate.name);
+  const schema=schemaFor(candidate.name);
+  if(explicitlyExcluded){
+   item.append(document.createTextNode("Excluded by your requirements."));
+  }else if(already){
+   item.append(document.createTextNode("Already in draft."));
+  }else if(schema&&review){
+   const button=document.createElement("button");
+   button.className="secondary";button.type="button";
+   button.textContent="Add "+candidate.name+" to draft";
+   button.addEventListener("click",()=>{
+    try{
+     review=includeSuggestedSection(review,schema);
+     renderEditor();refreshPreview();button.disabled=true;
+     byId("status").textContent="Added "+candidate.name+". Check the suggested fields before saving.";
+    }catch(error){byId("status").textContent=error.message;}
+   });
+   item.append(button);
+  }else item.append(document.createTextNode("Review this manually."));
+  list.append(item);
+ }
+}
+async function runEnhanced(){
+ const button=byId("semantic-run"),status=byId("semantic-status");
+ const device=byId("semantic-device").value;
+ const description=input.value;
+ button.disabled=true;
+ const started=performance.now();
+ try{
+  if(device==="webgpu"&&!navigator.gpu)
+   throw Error("WebGPU unavailable in this browser. Select CPU (WebAssembly).");
+  if(!semanticRuntime||semanticDevice!==device){
+   semanticRuntime?.dispose?.();semanticRuntime=null;
+   status.textContent="Downloading/loading an optional third-party model locally. "+
+     "This may take time and use tens of MB; input text is not sent to an inference API.";
+   semanticRuntime=await loadLocalSemantic({device});
+   semanticDevice=device;
+  }
+  status.textContent="Computing local sentence embeddings and matching business concepts…";
+  const ranking=await semanticRuntime.analyze(description);
+  if(description!==input.value){
+   status.textContent="The description changed. Run enhanced analysis again to avoid stale suggestions.";
+   return;
+  }
+  if(!plan?.blueprint){
+   status.textContent="The rule-based interpreter has no draft yet. Clarify the description before adding sections.";
+  }else{
+   renderSemantic(ranking,description);
+   status.textContent="Matched "+ranking.length+" catalog concepts in "+
+     ((performance.now()-started)/1000).toFixed(1)+" seconds (including model loading). "+
+     "These matches are unvalidated and will never be applied automatically.";
+  }
+ }catch(err){
+  status.textContent="Enhanced model unavailable: "+err.message+
+    ". The normal offline designer is unaffected.";
+ }finally{button.disabled=false;}
+}
+byId("semantic-run").addEventListener("click",runEnhanced);
 byId("analyse").addEventListener("click",describe);
 byId("app-name").addEventListener("input",()=>{
   if(!review)return;
