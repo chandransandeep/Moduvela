@@ -67,6 +67,12 @@ code{font-family:ui-monospace,monospace}#status{min-height:1.5rem}
 <p id="semantic-status" role="status" class="muted fine">Not loaded. Standard MicroAI works without downloading it.</p>
 <p class="muted fine">Similarity ranking is experimental and is not a confidence percentage or a validation of your business requirements. It cannot execute workflows or create records.</p>
 <ul id="semantic-suggestions"></ul>
+<h2>Experimental deep local generation — powerful WebGPU computers only</h2>
+<p class="muted fine">Advanced opt-in feature: a small 0.5B-parameter language model running locally with WebGPU. Its q4f16 files can require roughly <strong>483 MB of model weights</strong>, additional runtime downloads, and significant browser/GPU memory. Initial use requires internet. This is <strong>not necessary</strong> for the standard product and has not been browser-hardware verified in CI.</p>
+<button type="button" class="secondary" id="deep-run">Download & run local generative model (~0.5 GB)</button>
+<p id="deep-status" role="status" class="muted fine">Not loaded. No external model downloads unless you explicitly choose this option.</p>
+<ul id="deep-results"></ul>
+<p class="muted fine">Treat every generated field as untrusted. No proposed section is saved or activated until you choose to include it and approve the final draft. Generated roles, code and workflows are discarded.</p>
 <h2>Diagnostic information</h2>
 <details><summary>Show interpreter diagnostics</summary><pre id="diagnostics"></pre></details>
 <p class="muted fine">This is a small rule-assisted classifier, not general-purpose AI. It may misinterpret requirements, particularly negation and complex exceptions. All suggestions need review.</p>

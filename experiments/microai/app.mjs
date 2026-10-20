@@ -4,6 +4,7 @@ import {predictCompact,compactInfo} from "./trained.mjs";
 import {predictCompactV2,compactV2Info} from "./trained_v2.mjs";
 import {loadLocalSemantic,SEMANTIC_OPTIONS} from "./semantic.mjs";
 import {schemaFor} from "./semantic_catalog.mjs";
+import {loadLocalGenerator} from "./generative.mjs";
 import {beginReview,editSection,addSection,removeSection,compileReviewedBlueprint,includeSuggestedSection} from "./review.mjs";
 const byId=id=>document.getElementById(id);
 const input=byId("description");
@@ -11,6 +12,7 @@ let plan=null;
 let review=null;
 let semanticRuntime=null;
 let semanticDevice=null;
+let deepGenerator=null;
 
 function line(target,text) {
   const li=document.createElement("li");
@@ -246,6 +248,72 @@ async function runEnhanced(){
  }finally{button.disabled=false;}
 }
 byId("semantic-run").addEventListener("click",runEnhanced);
+async function runDeep(){
+ const button=byId("deep-run"),status=byId("deep-status");
+ const description=input.value;
+ if(!navigator.gpu){
+  status.textContent="WebGPU is unavailable. Standard and CPU semantic modes remain available.";
+  return;
+ }
+ if(!window.confirm("This experimental WebGPU model can download ~0.5 GB of weights plus other assets, "+
+   "use substantial GPU memory, and may fail or run slowly. "+
+   "Model/runtime hosting can see download metadata but descriptions are inferred locally. Continue?"))return;
+ button.disabled=true;
+ const start=performance.now();
+ try{
+  if(!deepGenerator){
+   status.textContent="Loading an optional local 0.5B language model. Large download; please wait…";
+   deepGenerator=await loadLocalGenerator();
+  }
+  status.textContent="Generating a candidate business data design on this device…";
+  const output=await deepGenerator.propose(description);
+  if(input.value!==description){
+   status.textContent="Description changed while processing. Run again to avoid stale output.";
+   return;
+  }
+  const list=byId("deep-results");clear(list);
+  if(!plan?.blueprint&&output.entities.length){
+   plan={...plan,blueprint:{
+     version:1,name:"Custom Business Operations",category:"custom",
+     description,status:"proposal",entities:[],
+     limitations:["Generated locally from unverified model output; human review required"]
+   }};
+   review=beginReview(plan);
+   byId("design").hidden=false;
+   renderEditor();
+  }
+  for(const candidate of output.entities){
+   const item=document.createElement("li");
+   item.append(document.createTextNode(candidate.name+
+     " — "+candidate.fields.join(", ")+". "));
+   const excluded=plan?.excluded?.some(x=>x.name===candidate.name);
+   const already=review?.sections?.some(x=>x.name.toLowerCase()===candidate.name.toLowerCase());
+   if(excluded){item.append(document.createTextNode("Excluded by your description."));}
+   else if(already){item.append(document.createTextNode("Already in draft."));}
+   else if(review){
+    const button=document.createElement("button");
+    button.className="secondary";button.type="button";
+    button.textContent="Add "+candidate.name+" for review";
+    button.addEventListener("click",()=>{
+     try{
+      review=includeSuggestedSection(review,candidate);
+      renderEditor();refreshPreview();button.disabled=true;
+      byId("status").textContent="Added "+candidate.name+" to draft. Check all fields.";
+     }catch(error){byId("status").textContent=error.message;}
+    });
+    item.append(button);
+   }
+   list.append(item);
+  }
+  status.textContent="Local model suggested "+output.entities.length+
+    " editable section(s) in "+((performance.now()-start)/1000).toFixed(1)+
+    " seconds (including load). None were applied automatically.";
+ }catch(error){
+  status.textContent="Local generation unavailable or output rejected: "+error.message+
+    ". Your ordinary blueprint is unchanged.";
+ }finally{button.disabled=false;}
+}
+byId("deep-run").addEventListener("click",runDeep);
 byId("analyse").addEventListener("click",describe);
 byId("app-name").addEventListener("input",()=>{
   if(!review)return;

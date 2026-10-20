@@ -53,6 +53,8 @@ class DraftImportBrowserTests(unittest.TestCase):
                 self.assertIn("loadLocalSemantic",semantic)
                 catalog=urlopen(base+"/microai/semantic_catalog.mjs").read().decode()
                 self.assertIn("CATALOG",catalog)
+                local_generator=urlopen(base+"/microai/generative.mjs").read().decode()
+                self.assertIn("loadLocalGenerator",local_generator)
                 review=urlopen(base+"/microai/review.mjs").read().decode()
                 self.assertIn("compileReviewedBlueprint", review)
                 payload={
