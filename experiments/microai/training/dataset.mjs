@@ -43,3 +43,4 @@ function makeCorpus() {
   };
 }
 export const CORPUS=makeCorpus();
+export {PHRASES as TRAIN_PHRASES,DOMAINS as TRAIN_DOMAINS};

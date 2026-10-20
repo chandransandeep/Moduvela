@@ -20,6 +20,7 @@ jobs:
           node experiments/microai/training/train.mjs --check
           node experiments/microai/benchmark.mjs
           node experiments/microai/research/inference_candidates.mjs
+          node experiments/microai/research/train_v2.mjs --emit-model
           node experiments/microai/training/design_evaluate.mjs
           node --test experiments/microai/training/*.test.mjs
       - name: Test browser MicroAI without packages or model APIs
